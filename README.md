@@ -21,7 +21,7 @@ qMRI toolbox is a register of Python scripts used to compute MRI parametric maps
 
 **Based on XFL data**
 
-> *"Compute a map of B1 from XFL images; based on validation of a very fast B1-mapping sequence for parallel transmission on a human brain at 7T", Amadon et al., ISMRM 2011.* 
+> *"Validation of a very fast B1-mapping sequence for parallel transmission on a human brain at 7T", Amadon et al., ISMRM 2011.* 
 
     ./B1_map_XFL XFL.nii.gz output.nii.gz
 
@@ -103,7 +103,7 @@ Before getting the susceptibility image from QSM datas, they have to be set up v
 
 **Rephase images**
 
-> *"Phase reconstruction from Multiple Coil Data Using a Virtual Reference Coil", [Parker et al, MRM 2014](https://www.ncbi.nlm.nih.gov/pubmed/24006172).*
+> *"Phase reconstruction from Multiple Coil Data Using a Virtual Reference Coil", [Parker et al., MRM 2014](https://www.ncbi.nlm.nih.gov/pubmed/24006172).*
 
     ./rephase_images GRE_01.nii.gz GRE_02.nii.gz omag.nii.gz ophase.nii.gz oHvector.bvec ocomb
 
@@ -118,18 +118,18 @@ where
 
 **Unwrap phase images**
 
+The tissue phase is estimated using the MRPhaseUnwrap, to compute phase unwrapping, and V_SHARP, for background phase removal, scripts from [STI Suite Matlab Toolbox](https://people.eecs.berkeley.edu/~chunlei.liu/software.html).
+
     ./unwrap_phase phase4D.nii.gz comb_mag.nii.gz mask.nii.gz output.nii.gz
 
 * comb\_mag.nii.gz, one combined GRE magnitude
 * mask.nii.gz, brain mask from the GRE data
 
-Tissue phase estimated result
-
-STI SUITE MATLAB TOOLBOX
-
 **Estimate susceptibility data**
 
-STI SUITE ATLAB TOOLBOX
+The susceptibility is estimated using the iLSQR script from [STI Suite Matlab Toolbox](https://people.eecs.berkeley.edu/~chunlei.liu/software.html).
+
+> *"A method for estimating and removing streaking artifacts in quantitative susceptibility mapping", [Wei et al., Neuroimage 2015](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4406048/pdf/nihms678361.pdf)*
 
     ./QSM_map tissue_phase.nii.gz mask.nii.gz GRE.nii.gz H.bvec output.nii.gz
 
