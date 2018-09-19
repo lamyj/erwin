@@ -32,7 +32,6 @@ qMRI toolbox is a register of Python scripts used to compute MRI parametric maps
 
 Both are based on 
 > *"Rapid combined T1 and T2 mapping using gradient recalled acquisition in the steady state", [Deoni et al., MRM 2003](https://onlinelibrary.wiley.com/doi/full/10.1002/mrm.10407).*
-----
 > *"Influence of RF Spoiling on the Stability and Accuracy of T1 Mapping Based on Spoiled FLASH With Varying Flip Angles", [Preibisch, MRM 2003](https://onlinelibrary.wiley.com/doi/pdf/10.1002/mrm.21776).*
 
 **Based on Variable Flip Angle (VFA) datas**
