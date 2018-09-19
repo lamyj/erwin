@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+import argparse
+import base64
+import json
+import logging
+import math
+import re
+import sys
+
+import dicomifier
+import nibabel
+import numpy
+import scipy.ndimage
+
+import argument_parsers
+
+def b1_map(AFI, output):
+    """B1 map generation"""
+    
+    image, meta_data = AFI
+    
+    FA = meta_data['FlipAngle'][0] # in degrees
+    n = get_tr_ratio(meta_data)
+    
+    logging.debug('FA: {} degrees'.format(FA))
+    logging.info('TR ratio: {}'.format(n))
+    
+    # Read AFI sequence parameters
+    data = image.get_data().astype(numpy.float32)
+
+    mag_1 = data[...,0]
+    mag_2 = data[...,1]
+                
+    # Calculate the B1 map
+    r = mag_2/mag_1       
+    X = (r*n - 1)/(n-r)
+    alpha = numpy.arccos(X) # in radians
+    
+    img_B1 = (alpha*180/math.pi)/FA*100
+    img_B1 = numpy.nan_to_num(img_B1)
+    
+    img_B1 = scipy.ndimage.filters.gaussian_filter(img_B1,1)
+        
+    oimg = nibabel.Nifti1Image(img_B1, image.affine)
+    nibabel.save(oimg, output)  
+
+    
+def get_tr_ratio(meta_data):
+    """ Read the TR ratio from the private data. """    
+    
+    protocol = dicomifier.dicom_to_nifti.siemens.parse_csa(
+            base64.b64decode(meta_data["00291020"][0]))["MrPhoenixProtocol"][0]
+    tr_ratio = float(re.search(br"sWiPMemBlock.alFree\[5\]\s*=\s*(\S+)$", protocol, re.M).group(1))
+    
+    return tr_ratio
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(
+        description="Compute a map of B1 from AFI images; based on "
+            "Actual Flip-Angle Imaging in the Pulsed Steady State: A method "
+            "for rapid three-dimensional mapping of the transmitted "
+            "radiofrequency field, Yarnykh, MRM 2007.")
+    parser.add_argument(
+        "AFI", type=argument_parsers.image_and_meta_data_type, 
+        help="Path to the AFI image")
+    parser.add_argument("output", help="Path to the B1 map")
+    parser.add_argument(
+        "-v", "--verbose", 
+        default = 'warning', choices=["debug", "info", "warning"],
+        metavar="LEVEL", help="Logging level (default: warning)")
+    args = vars(parser.parse_args())
+               
+    logging.basicConfig(level=args.pop('verbose').upper())
+        
+    numpy.seterr(divide="ignore", invalid="ignore")
+    
+    try:
+        sys.exit(b1_map(**args))
+    except Exception as e:
+        if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
+            raise
+        else:
+            parser.error(e)

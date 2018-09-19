@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+import re
+import sys
+import json
+import numpy
+import base64
+import logging
+import nibabel
+import argparse
+import dicomifier
+
+import argument_parsers
+
+from scipy.ndimage.filters import gaussian_filter
+
+
+def b1_map(XFL, output):
+    """B1 map generation"""
+    
+    image, meta_data = XFL
+    
+    FA = meta_data['FlipAngle'][0] # [deg]
+    FA_prep = get_fa_prep(meta_data) # [deg]
+    
+    logging.debug('FA: {}'.format(FA))
+    logging.info('FA prep: {}'.format(FA_prep))
+    
+    # Read XFL sequence parameters
+    data = image.get_data().astype(numpy.float32)
+                
+    # Calculate the B1 map    
+    img_B1 = data/FA_prep
+            
+    oimg = nibabel.Nifti1Image(10*img_B1, image.affine)
+    nibabel.save(oimg, output)  
+
+    
+def get_fa_prep(meta_data):
+    """ Read the FA prep from the private data. """    
+        
+    protocol = dicomifier.dicom_to_nifti.siemens.parse_csa(
+            base64.b64decode(meta_data["00291020"][0]))["MrPhoenixProtocol"][0]
+    fa_prep = float(re.search(br"sWiPMemBlock.adFree\[0\]\s*=\s*(\S+)$", protocol, re.M).group(1))
+    
+    return fa_prep
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(
+        description="Compute a map of B1 from XFL images; based on "
+            "Validation of a very fast B1-mapping sequence for parallel "
+            "transmission on a human brain at 7T, "
+            "Amadon et al., ISMRM 2011.")
+    
+    parser.add_argument(
+        "XFL", type=argument_parsers.image_and_meta_data_type, 
+        help="Path to the XFL image")
+    parser.add_argument("output", help="Path to the B1 map")
+    parser.add_argument(
+        "-v", "--verbose", 
+        default = 'warning', choices=["debug", "info", "warning"],
+        metavar="LEVEL", help="Logging level (default: warning)")
+    args = vars(parser.parse_args())
+    
+    logging.basicConfig(level=args.pop('verbose').upper())
+    
+    numpy.seterr(divide="ignore", invalid="ignore")
+    
+    try: 
+        sys.exit(b1_map(**args))
+    except Exception as e:
+        if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
+            raise
+        else:
+            parser.error(e)

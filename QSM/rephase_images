@@ -1,0 +1,267 @@
+#!/usr/bin/env python3
+
+
+import os
+import re
+import sys
+import numpy
+import base64
+import logging
+import nibabel
+import argparse
+import dicomifier
+
+import argument_parsers
+
+
+def rephase_images(GRE, omag, ophase, oHvector, ocomb):
+    """ Rephase images """
+    
+    output_path = os.path.split(omag)[0]
+    
+    # Separate magnitude and phase images
+    magnitude_files, phase_files = separate_images(GRE, output_path)
+        
+    # Calculate phase reference (Santini method)
+    ref_phase, img_affine = calculate_phase_reference(magnitude_files, phase_files)    
+    
+    # Rephase and combine images (Santini method)
+    comb_mag, comb_phase, H_vector = rephase_images_Santini(magnitude_files, phase_files, ref_phase)
+        
+    # Save rephased image as nifti files
+    save_4D_images(comb_mag, comb_phase, magnitude_files, output_path, ocomb, omag, ophase, img_affine)
+    save_H_vector(oHvector, H_vector)
+    
+
+def separate_images(GRE, output_path):    
+       
+    magnitude_files = []
+    phase_files = []
+
+    for image, meta_data in GRE:
+        
+        data = image.get_data().astype(numpy.float32)
+        hdr = image.header
+        nb_vols = hdr['dim'][4]
+                
+        if meta_data['ImageType'][2] == 'M':
+            for nb in range(0, nb_vols):
+                oimg = nibabel.Nifti1Image(image_TE_split_coils(data[:,:,:,nb], meta_data, nb, output_path), image.affine) 
+                path_tmp = os.path.join(output_path, "qsm_separate_{}_magnitude.nii.gz".format(nb+1))
+                magnitude_files.append(path_tmp)
+                nibabel.save(oimg, path_tmp)
+                        
+        else:
+            for nb in range(0, nb_vols):
+                oimg = nibabel.Nifti1Image(image_TE_split_coils(data[:,:,:,nb], meta_data, nb, output_path), image.affine)
+                path_tmp = os.path.join(output_path, "qsm_separate_{}_phase.nii.gz".format(nb+1))
+                phase_files.append(path_tmp)
+                nibabel.save(oimg, path_tmp)
+            
+    return magnitude_files, phase_files
+
+
+def image_TE_split_coils(img, meta_data, nb, output_path):
+  
+    nb_coils = 32
+    img_shape = img.shape
+    oimg = numpy.zeros((img_shape[0], img_shape[1], int(img_shape[2]/nb_coils), nb_coils))
+
+    siemens_data = [
+            dicomifier.dicom_to_nifti.siemens.parse_csa(base64.b64decode(x[0]))["ImaCoilString"][0][:-1]
+            for x in meta_data["00291010"][nb]]
+    coils = [int(re.match(br"H(\d+)", x).group(1)) for x in siemens_data]
+    
+    z = list(zip(coils, img.T))
+    z.sort(key = lambda x:x[0])
+    d = {}
+    for coil, vol in z:
+        d.setdefault(coil, []).append(vol)
+
+    series = [d[coil] for coil in sorted(d.keys())]
+    oimg = (numpy.asarray(series)).T
+
+    return oimg
+               
+        
+def calculate_phase_reference(magnitude_files, phase_files):
+    """ Calculate the phase reference based on Santini method. """
+    
+    img = nibabel.load(magnitude_files[0])
+    M = img.get_data().astype(numpy.float64)
+    
+    img = nibabel.load(phase_files[0])
+    P = img.get_data().astype(numpy.float64)    
+    P = P/4096*numpy.pi # [rad]
+    
+    ref_phase = []
+    for coil in range(0, M.shape[3]):
+        m = M[:,:,:,coil]
+        p = P[:,:,:,coil]
+        c = m*numpy.exp( 1j * p )
+        ref_phase.append(numpy.angle( numpy.sum(c) )) # angle, return result in radians
+
+    return ref_phase, img.affine
+
+
+def rephase_images_Santini(magnitude_files, phase_files, ref_phase):
+    """ Rephase images based on Santini method. """
+                
+    nb_TE = len(magnitude_files)
+    img = nibabel.load(magnitude_files[0])
+    img_shape = img.get_data().shape
+    
+    PHASE = numpy.zeros((img_shape[0], img_shape[1], img_shape[2], nb_TE))
+    MAG = numpy.zeros((img_shape[0], img_shape[1], img_shape[2], nb_TE))
+    
+    for TE in range(0, nb_TE):
+        print("Rephase image TE = {}".format(TE+1))
+        img = nibabel.load(magnitude_files[TE])
+        M = img.get_data().astype(numpy.float64)
+            
+        img = nibabel.load(phase_files[TE])
+        P = img.get_data().astype(numpy.float64)
+            
+        P = P/4096 * numpy.pi # [rad]
+            
+        comb_mag, comb_phase = QSM_PhaseRecoMultiCoils_Santini_2steps(M, P, ref_phase, TE)
+        
+        PHASE[:,:,:,TE] = comb_phase
+        
+        MAG[:,:,:,TE] = numpy.around(comb_mag)
+        
+    H_vector = img.affine[0:3,2]
+    
+    return MAG, PHASE, H_vector
+        
+
+def QSM_PhaseRecoMultiCoils_Santini_2steps(M, P, ref_phase, TE):
+    """ Based on
+    Parker et al, MRM 72:563-569 (2014) -- "Phase reconstruction from Multiple 
+    Coil Data Using a Virtual Reference Coil" """
+   
+    nb_slices = M.shape[2]
+    nb_coils = M.shape[3]
+   
+    C = M * numpy.exp( 1j * P )
+
+    # Force a 0 phase where sensitivity is the best for each echo: this gives the virtual coil reference
+    rephased_image = numpy.zeros(P.shape, dtype=complex)
+    for coil in range(0,nb_coils):
+        rephased_image[:,:,:,coil] = C[:,:,:,coil] / numpy.exp( 1j * ref_phase[coil] )
+
+    rephased_image = numpy.where(rephased_image != (-0. -0.j), rephased_image, 0)
+    
+    virtual_coil = rephased_image.sum(3) # Weighted sum by the Signal itself
+    conj_virtual_coil = numpy.conjugate(virtual_coil)
+              
+    difference = numpy.zeros(rephased_image.shape)
+    for coil in range(0, nb_coils):  
+        difference[:,:,:,coil] = numpy.angle( rephased_image[:,:,:,coil] *  conj_virtual_coil)
+    
+    # Low path filter this difference
+    # Filter is a 2D-hanning window whose size is the lowest dimension in plan -> min(sizeX,sizeY)
+    difference_filter = numpy.zeros(rephased_image.shape)
+    width = numpy.minimum( difference.shape[0], difference.shape[1] )
+
+    hanning_1D = []
+    for i in range(0, width):
+        hanning_1D.append( 0.5 * ( 1 - numpy.cos( 2 * numpy.pi * i / (width-1) ) ) )
+        
+    hanning_2D = numpy.array([hanning_1D]).T * hanning_1D
+    pad_width = int(numpy.maximum( (rephased_image.shape[0]-width)/2, (rephased_image.shape[1]-width)/2 ))
+    hanning_2D = numpy.pad(hanning_2D, [(0, 0), (pad_width, pad_width)], 'constant', constant_values=0)
+
+    hanning_ND = repmat_2Dto4D(hanning_2D, nb_slices, nb_coils)
+    hanning_ND = numpy.fft.fftshift(hanning_ND, axes=(0,1))
+    
+    # /!\ Use of numpy.fft.fft() gives different results as from fft() of 
+    # Matlab. The more the data is huge, the more the difference is 
+    # significative /!\
+    for z in range(0, nb_slices):        
+        difference_filter[:,:,z,:] = numpy.real( numpy.fft.ifft2( numpy.fft.fft2(difference[:,:,z,:]) * hanning_ND[:,:,z,:] )) #TODO: check fft() behaviour
+
+    # Substract filtered difference from original
+    difference_filter = numpy.absolute(rephased_image) * numpy.exp( 1j * difference_filter )
+    coil_filtered = numpy.zeros(rephased_image.shape)
+    for coil in range(0, nb_coils):  
+        coil_filtered[:,:,:,coil] = numpy.angle( rephased_image[:,:,:,coil] *  numpy.conjugate( difference_filter[:,:,:,coil] ) ) 
+    
+    # Calculate the combined rephased image
+    rephased_image = numpy.absolute(rephased_image) * numpy.exp( 1j * coil_filtered )
+    
+    comb_mag = numpy.sqrt(  numpy.power( numpy.abs(rephased_image), 2 ).sum(3) )
+    comb_phase = numpy.angle( rephased_image.sum(3) )
+    
+    return comb_mag, comb_phase
+    
+
+def repmat_2Dto4D(mat, dim3, dim4):
+    """ Repeat matrix onto dimensions 3 and 4. """
+        
+    mat_3D = numpy.zeros((mat.shape[0], mat.shape[1], dim3))
+    for i in range(0,dim3):
+        mat_3D[:,:,i] = mat
+        
+    mat_4D = numpy.zeros((mat.shape[0], mat.shape[1], dim3, dim4))
+    for i in range(0,dim4):
+        mat_4D[:,:,:,i] = mat_3D
+
+    return mat_4D
+
+
+def save_4D_images(comb_mag, comb_phase, magnitude_files, output_path, ocomb, omag, ophase, img_affine):
+    """ Save processed datas in a same data according to their type. """
+    
+    for TE in range(0, comb_mag.shape[3]):
+        
+        oimg = nibabel.Nifti1Image(comb_mag[:,:,:,TE], img_affine)
+        nibabel.save(oimg, "{}_{}_magnitude.nii.gz".format(ocomb, format(TE+1)))
+        
+        oimg = nibabel.Nifti1Image(comb_phase[:,:,:,TE], img_affine)
+        nibabel.save(oimg, "{}_{}_phase.nii.gz".format(ocomb, format(TE+1)))
+        
+    oimg = nibabel.Nifti1Image(comb_mag, img_affine)
+    nibabel.save(oimg, omag)
+    
+    oimg = nibabel.Nifti1Image(comb_phase, img_affine)
+    nibabel.save(oimg, ophase)
+    
+
+def save_H_vector(oHvector, H_vector):
+    """ Save the magnetic field vector. """
+    
+    f = open( oHvector, "w")     
+    for h in H_vector:
+        f.write('{}\n'.format(h))
+    f.close() 
+    
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="QSM preprocessing - Setting rephased images.")
+
+    parser.add_argument(
+            "GRE", type=argument_parsers.image_and_meta_data_type, nargs=2, 
+            help="Path to the GRE images (magnitude and phase, in any order)")
+    parser.add_argument("omag", help="Magnitude-4D result")
+    parser.add_argument("ophase", help="Phase-4D result")
+    parser.add_argument("oHvector", help="Magnetic field vector result")
+    parser.add_argument("ocomb", help="Prefix for combined images")
+    parser.add_argument(
+            "-v", "--verbose", 
+            default = 'warning', choices=["debug", "info", "warning"],
+            metavar="LEVEL", help="Logging level (default: warning)")
+    args = vars(parser.parse_args())
+               
+    logging.basicConfig(level=args.pop('verbose').upper())
+            
+    numpy.seterr(divide="ignore", invalid="ignore")        
+    
+    try:
+        sys.exit(rephase_images(**args))
+    except Exception as e:
+        if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
+            raise
+        else:
+            parser.error(e)

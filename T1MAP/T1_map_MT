@@ -1,0 +1,111 @@
+#!/usr/bin/env python3
+
+import argparse
+import json
+import logging
+import re
+import sys
+import math
+
+import nibabel
+import numpy
+
+import argument_parsers
+
+T1_MIN = 0.1
+T1_MAX = 10
+
+def t1_map(PDw, T1w, rB1_map, output):
+    """T1 map generation"""
+           
+    # Loading datas
+    FA = [] # [°]
+    TR = [] # [s]
+    S = []
+    ind = 0
+    for image, meta_data in [PDw, T1w]: 
+        FA.append(meta_data['FlipAngle'][0])
+        TR.append(meta_data['RepetitionTime'][0]*1e-3)
+        if ind is 0:
+            shape = image.get_data().shape
+            S = numpy.zeros((shape[0], shape[1], shape[2], 2))
+            S[:,:,:,ind] = image.get_data().astype(numpy.float32).sum(3)
+            ind = ind + 1
+        S[:,:,:,ind] = image.get_data().astype(numpy.float32).sum(3)
+ 
+    if TR[0] != TR[1]:
+        raise Exception('TR are different: {}'.format(TR))    
+    logging.debug('TR = {} ms'.format(numpy.multiply(TR, 1e3)))
+    if FA[0] == FA[1]:
+        raise Exception('FA are equals: {}'.format(FA))    
+    logging.debug('FA = {} degrees'.format(FA))
+    
+    data_rB1 = rB1_map.get_data().astype(numpy.float32)*1e-2
+    
+    # Computing T1 map
+    X1 = numpy.divide(S[:,:,:,0], numpy.tan(numpy.radians(FA[0]*data_rB1)))
+    X2 = numpy.divide(S[:,:,:,1], numpy.tan(numpy.radians(FA[1]*data_rB1)))
+
+    Y1 = numpy.divide(S[:,:,:,0], numpy.sin(numpy.radians(FA[0]*data_rB1)))
+    Y2 = numpy.divide(S[:,:,:,1], numpy.sin(numpy.radians(FA[1]*data_rB1)))
+    
+    m = (Y2 - Y1)/(X2 - X1)
+    m[m<=0] = numpy.nan
+    T1_app = -TR[0] / numpy.log(m)
+
+    A, B = preibisch_parameters(data_rB1)
+
+    T1_map = A + B*T1_app
+    T1_map = numpy.real(T1_map)
+    
+    T1_map[T1_map < T1_MIN] = numpy.nan
+    T1_map[T1_map > T1_MAX] = numpy.nan
+    
+    oimg = nibabel.Nifti1Image(T1_map, PDw[0].affine)
+    nibabel.save(oimg, output)
+    
+    
+def preibisch_parameters(CRF): #TODO: compute the poly estimation (script in iadpat)
+    """ Preibisch parameters 
+        Influence of RF Spoiling on the Stability and Accuracy of T1 Mapping 
+        Based on Spoiled FLASH With Varying Flip Angles (Preibisch, 2003)
+    """
+    A = 0.275 * CRF**2 - 0.359 * CRF + 0.142 # [s]
+    B = -0.33 * CRF**2 + 0.25 * CRF + 0.92
+    return A, B
+    
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(
+        description="Compute a T1 map from MT images; based on Rapid combined"
+            "T1 and T2 mapping using gradient recalled acquisition in the"
+            "steady state, Deoni et al., MRM 49, 2003.")
+
+    parser.add_argument(
+        "PDw", type=argument_parsers.image_and_meta_data_type,
+        help="Path to PDw magnitude image")
+    parser.add_argument(
+        "T1w", type=argument_parsers.image_and_meta_data_type,
+        help="Path to T1w magnitude image")
+    parser.add_argument(
+        "rB1_map", type=argument_parsers.image_type,
+        help="Path to the rB1 map")
+    parser.add_argument("output", help="Path to the T1 map")
+    parser.add_argument(
+        "-v", "--verbose", 
+        default = 'warning', choices=["debug", "info", "warning"],
+        metavar="LEVEL", help="Logging level (default: warning)")
+    args = vars(parser.parse_args())
+    
+    logging.basicConfig(level=args.pop('verbose').upper())
+    
+    numpy.seterr(divide="ignore", invalid="ignore")
+    
+    try: 
+        sys.exit(t1_map(**args))
+    except Exception as e:
+        if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
+            raise
+        else:
+            parser.error(e)

@@ -1,0 +1,155 @@
+#!/usr/bin/env python3
+
+import argparse
+import base64
+import logging
+import re
+import sys
+
+import dicomifier
+import nibabel
+import numpy
+
+import argument_parsers
+
+
+# Parameters for 3T
+LAMBDA = 0.9 # [g/mL]
+R1_A = 0.606 # [s^-1]
+ALPHA = 0.68
+
+MASK_THRESHOLD = 600
+
+def cbf_map(pCASL, M0, output):
+    """ CBF map """
+
+    data_M0 = M0.get_data().astype(numpy.float32).sum(3)
+    
+    mask = numpy.zeros(data_M0.shape)
+    mask[data_M0 > MASK_THRESHOLD] = 1
+    
+    PLD = {}
+    data_ASL = {}
+    deltaM = {}
+    deltaM_M0 = {}
+    Tacq = {}
+    CBF = {}
+    
+    pCASL_names = []
+    for image, meta_data in pCASL:
+        
+        hdr = image.header
+        nb_slices = hdr['dim'][3]
+               
+        ind = "pCASL{}".format(
+                re.compile('\d+').findall(meta_data["SeriesDescription"][0])[0]
+                )
+        
+        PLD[ind] = get_privateInfo(meta_data, "PLD")*1e-6 # [s]
+        
+        minTR = meta_data["RepetitionTime"][0]*1e-3 # [s]
+        nb_RF_Blocks = get_privateInfo(meta_data, "nbRFBlocks")
+        tau = nb_RF_Blocks * 0.0184
+         
+        data_ASL[ind] = image.get_data().astype(numpy.float32)
+ #       deltaM[ind] = numpy.mean(data_ASL[ind], axis=3)*mask
+        deltaM[ind] = mean_asl_interp(data_ASL[ind])*mask
+        deltaM_M0[ind] = deltaM[ind] / data_M0
+        Tacq[ind] = (minTR - tau - PLD[ind]) / nb_slices
+        CBF[ind] = numpy.zeros(data_M0.shape)
+   
+        pCASL_names.append(ind)
+    
+    for slice in range(0, nb_slices):
+        for ind in pCASL_names:
+          
+            w = PLD[ind] + (slice - 1)*Tacq[ind]
+            r = numpy.exp( -w * R1_A ) - numpy.exp( -(tau + w)*R1_A )
+            
+            CBF_tmp = numpy.divide(
+                    100 * 60 * deltaM[ind][:,:,slice] * LAMBDA * R1_A,
+                    2 * ALPHA * data_M0[:,:,slice]  * r # dM0 = dM / M0
+                    )
+            CBF_tmp[ CBF_tmp < 0 ] = 0
+            CBF[ind][:,:,slice] = CBF_tmp
+        
+    for ind in pCASL_names:
+        oCBF = nibabel.Nifti1Image(CBF[ind], pCASL[0][0].affine) 
+        nibabel.save(oCBF, output.replace(".nii.gz","_PLD={}.nii.gz".format(PLD[ind]*1e3)))
+
+
+def get_privateInfo(meta_data, field):
+    """ Read the pCASL informations from the private data. """    
+
+    protocol = dicomifier.dicom_to_nifti.siemens.parse_csa(
+            base64.b64decode(meta_data["00291020"][0]))["MrPhoenixProtocol"][0]
+    
+    if field is "PLD":
+        info = float(re.search(
+            br"sWiPMemBlock.adFree\[2\]\s*=\s*(\S+)$", protocol, re.M).group(1)) 
+    elif field is "nbRFBlocks":
+        info = float(re.search(
+            br"sWiPMemBlock.adFree\[3\]\s*=\s*(\S+)$", protocol, re.M).group(1))
+        
+    return info
+
+
+def mean_asl_interp(img):
+    """ Mean ASL with linear interpolation. """
+    
+    img_shape = img.shape
+
+    C = numpy.zeros(img_shape) # control
+    L = numpy.zeros(img_shape) # label
+    
+    N = img.shape[3]
+
+    for i in range(0,N,2):
+        L[:,:,:,i] = img[:,:,:,i]
+    for i in range(1,N,2):
+        C[:,:,:,i] = img[:,:,:,i]
+        
+    for i in range(1,N-2,2):
+        L[:,:,:,i] = ( L[:,:,:,i-1] + L[:,:,:,i+1] ) / 2
+    for i in range(2,N-1,2):
+        C[:,:,:,i] = ( C[:,:,:,i-1] + C[:,:,:,i+1] ) / 2
+
+    numpy.delete(C, 0, axis=3)
+    numpy.delete(C, -1, axis=3)
+    numpy.delete(L, 0, axis=3)
+    numpy.delete(L, -1, axis=3)
+
+    return numpy.mean(C-L, axis=3)    
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(
+        description="Compute a CBF map from pCASL images; based on"
+            "Arterial transit time imaging with flow encoding arterial spin "
+            "tagging (FEAST), Wang et al., MRM 2003")
+    
+    parser.add_argument(
+        "pCASL", type=argument_parsers.image_and_meta_data_type, nargs=2,
+        help="Path to the pCASL images")
+    parser.add_argument(
+        "M0", type=argument_parsers.image_type,
+        help="Path to the M0 image")
+    parser.add_argument("output", help="Path to the CBF map")
+    parser.add_argument(
+        "-v", "--verbose", 
+        default = 'warning', choices=["debug", "info", "warning"],
+        metavar="LEVEL", help="Logging level (default: warning)")
+    args = vars(parser.parse_args())
+    
+    logging.basicConfig(level=args.pop('verbose').upper())
+    
+    numpy.seterr(divide="ignore", invalid="ignore")
+    
+    try: 
+        sys.exit(cbf_map(**args))
+    except Exception as e:
+        if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
+            raise
+        else:
+            parser.error(e)

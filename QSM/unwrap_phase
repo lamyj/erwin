@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import numpy
+import logging
+import nibabel
+import argparse
+import subprocess
+
+
+MASK_THRESHOLD = 0.06
+
+VOXEL_SIZE = [1, 1, 1] # [mm]
+PAD_SIZE = [24, 24, 24]
+RADIUS = 14
+
+UNWRAPP = ''
+
+
+def unwrap_phase(phase, comb_mag, mask, otissuephase):
+
+    output_path = os.path.split(otissuephase)[0]
+
+    # Phase unwrapping and V-SHARP ...
+    if UNWRAPP is 'FSL':
+        # ... using PRELUDE from FSL to unwrap the phase and then VSHARP from STISUITE
+        unwrappedphase = phase_unwrapping(comb_mag, mask, output_path)
+        phase_vsharp(unwrappedphase, mask, otissuephase)
+    else:
+        # ... doing both steps using STISUTIE
+        phase_unwrapping_vsharp(phase, mask, otissuephase)
+        
+
+def phase_unwrapping_vsharp(phase_filename, mask_filename, otissuephase):    
+    
+    # G(un)zip outside Matlab script because it requires Java (and Matlab is 
+    # launched without JVM)    
+    phase_filename = check_gz(phase_filename, 'input_gz')
+    mask_filename = check_gz(mask_filename, 'input_nii_gz')
+    otissuephase = check_gz(otissuephase, 'output')
+
+    subprocess.check_call(["bash", 
+                         "{}/call_matlab.sh".format(os.getcwd()),
+                         "call_MRPhaseUnwrapVSHARP",
+                         phase_filename,
+                         mask_filename,
+                         "{}".format(VOXEL_SIZE[0]),
+                         "{}".format(VOXEL_SIZE[1]),
+                         "{}".format(VOXEL_SIZE[2]),
+                         "{}".format(PAD_SIZE[0]),
+                         "{}".format(PAD_SIZE[1]),
+                         "{}".format(PAD_SIZE[2]),
+                         otissuephase.replace('.gz','')
+                         ])
+
+    subprocess.check_call(["gzip", "-f", otissuephase.replace('.gz','')])
+    subprocess.check_call(["gzip", "-f", phase_filename])
+    
+    return otissuephase
+
+
+def phase_unwrapping(comb_mag, mask_filename, result_path):
+
+    tmp = os.path.join(result_path, "tmp_x.nii.gz")
+    ofilename = os.path.join(result_path, "unwrappedphase.nii.gz")
+    img = nibabel.load(comb_mag)
+    
+    unwrap_4D = numpy.zeros((img.shape[0],img.shape[1],img.shape[2], 8), dtype=numpy.float32)
+    for TE in range(0, 8):
+    
+        subprocess.check_call(["prelude",                            
+                             '-p', comb_mag.replace("1",TE+1).replace("magnitude","phase"),
+                             '-a', comb_mag.replace("1",TE+1),
+                             '-m', mask_filename,
+                             '-o', tmp.replace('x','{}'.format(TE))
+                             ])
+    
+        unwrap_4D[:,:,:,TE] = nibabel.load(tmp.replace('x','{}'.format(TE+1))).get_data()
+        
+    unwrap_3D = unwrap_4D.sum(3)
+    oimg = nibabel.Nifti1Image(unwrap_3D, img.affine)
+    nibabel.save(oimg, ofilename)  
+
+    return ofilename
+
+
+def phase_vsharp(unwrappedphase_filename, mask_filename, otissuephase):
+
+    # G(un)zip outside Matlab script because it requires Java (and Matlab is 
+    # launched without JVM)    
+    unwrappedphase_filename = check_gz(unwrappedphase_filename, 'input_gz')
+    mask_filename = check_gz(mask_filename, 'input_nii_gz')
+    otissuephase = check_gz(otissuephase, 'output')
+        
+    subprocess.check_call(["bash", 
+                         "{}/call_matlab.sh".format(os.getcwd()),
+                         "call_VSHARP",
+                         unwrappedphase_filename,
+                         mask_filename,
+                         "{}".format(VOXEL_SIZE[0]),
+                         "{}".format(VOXEL_SIZE[1]),
+                         "{}".format(VOXEL_SIZE[2]),
+                         otissuephase
+                         ])
+    
+    subprocess.check_call(["gzip", "-f", otissuephase])
+    subprocess.check_call(["gzip", "-f", unwrappedphase_filename])
+    
+    return otissuephase
+
+
+def check_gz(filename, type):
+
+    if filename.find('gz') is not -1:
+        if not os.path.isfile(filename[:-3]) and type is 'input_gz':  
+            subprocess.check_call(["gunzip", filename])
+        filename = filename[:-3]        
+
+    return filename
+    
+    
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="QSM preprocessing - unwrapping phase image.")
+    
+    parser.add_argument("phase", help="Phase 4D combination image")
+    parser.add_argument("comb_mag", help="Path to one combined GRE magnitude")
+    parser.add_argument("mask", help="Brain mask for the GRE QSM")
+    parser.add_argument("otissuephase", help="Tissue phase estimated result")
+    parser.add_argument(
+            "-v", "--verbose", 
+            default = 'WARNING', choices=["DEBUG", "INFO", "WARNING"],
+            metavar="LEVEL", help="logging level (default: WARNING)")
+    args = vars(parser.parse_args())
+        
+    logging.basicConfig(level=args.pop('verbose').upper()) 
+            
+    try: 
+        sys.exit(unwrap_phase(**args))
+    except Exception as e:
+        if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
+            raise
+        else:
+            parser.error(e)

@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+
+import argparse
+import json
+import logging
+import re
+import sys
+
+import nibabel
+import numpy
+
+import argument_parsers
+
+def t1_map(VFA, B1_map, T1_map_path, M0_path):
+    """T1 map generation"""
+   
+    CRF = B1_map.get_data().astype(numpy.float32)*1e-2
+    
+    # Read T1-FA datas
+    FA = []
+    TR = []
+    S = {}
+    
+    FA = [numpy.radians(meta_data['FlipAngle'][0]) for _, meta_data in VFA] # [rad]
+    TR = [meta_data['RepetitionTime'][0]*1e-3 for _, meta_data in VFA] # [s]
+    
+    logging.debug('FA = {} degrees'.format(numpy.degrees(FA)))
+    logging.debug('TR = {} ms'.format(numpy.multiply(TR, 1e3)))
+    
+    if FA[0] == FA[1]:
+        raise Exception('FA are similar: {}'.format(FA))
+    if TR[0] != TR[1]:
+        raise Exception('TR are different: {}'.format(TR))
+
+    # Compute T1map
+    S = [x[0].get_data().astype(numpy.float32) for x in VFA]
+    rFA = [fa*CRF for fa in FA]
+    X = numpy.divide(S, numpy.tan(rFA))
+    Y = numpy.divide(S, numpy.sin(rFA))
+    
+    # We have only two points: a fit is not needed
+    # NOTE: the formula is the same if the order of the images is reversed.
+    m = (Y[0]-Y[1]) / (X[0]-X[1])
+    b = Y[0] - m*X[0]
+    
+    T1_app = -TR[0] / numpy.log(m)
+    A, B = preibisch_parameters(CRF)
+    T1_map = A + B*T1_app
+    
+    oimg = nibabel.Nifti1Image(T1_map, VFA[0][0].affine)
+    nibabel.save(oimg, T1_map_path)
+    
+    if M0_path is not None:
+        M0 = nibabel.Nifti1Image(b/(1-m), VFA[0][0].affine)
+        nibabel.save(M0, M0_path)
+
+    
+def preibisch_parameters(CRF):
+    """ Preibisch parameters 
+        Influence of RF Spoiling on the Stability and Accuracy of T1 Mapping 
+        Based on Spoiled FLASH With Varying Flip Angles (Preibisch, 2003)
+    """
+    A = 0.275 * CRF**2 - 0.359 * CRF + 0.142 # [s]
+    B = -0.33 * CRF**2 + 0.25 * CRF + 0.92
+    return A, B
+    
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(
+        description="Compute a T1 map from VFA images; based on Rapid combined"
+            "T1 and T2 mapping using gradient recalled acquisition in the"
+            "steady state, Deoni et al., MRM 49, 2003.")
+    
+    parser.add_argument(
+        "VFA", type=argument_parsers.image_and_meta_data_type, nargs=2, 
+        help="Path to VFA images (in any order)")
+    parser.add_argument(
+        "B1_map", type=argument_parsers.image_type,
+        help="Path to the B1 map (in the same voxel space as the VFA)")
+    parser.add_argument("T1_map_path", help="Path to the T1 map")
+    parser.add_argument("--m0", dest="M0_path", help="Path to the M0 map")
+    parser.add_argument(
+        "-v", "--verbose", 
+        default = 'warning', choices=["debug", "info", "warning"],
+        metavar="LEVEL", help="Logging level (default: warning)")
+    args = vars(parser.parse_args())
+    
+    logging.basicConfig(level=args.pop('verbose').upper())
+    
+    numpy.seterr(divide="ignore", invalid="ignore")
+    
+    try: 
+        sys.exit(t1_map(**args))
+    except Exception as e:
+        if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
+            raise
+        else:
+            parser.error(e)
