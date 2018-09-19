@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-import json
 import logging
-import re
 import sys
 
 import nibabel
@@ -51,6 +49,7 @@ def b0_map(GRE, output):
            
     oimg = nibabel.Nifti1Image(img_B0, GRE[0][0].affine)
     nibabel.save(oimg, output)  
+
 
 if __name__ == "__main__":
 

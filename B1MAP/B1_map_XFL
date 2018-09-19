@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
+
 import re
 import sys
-import json
 import numpy
 import base64
 import logging
@@ -10,8 +10,6 @@ import argparse
 import dicomifier
 
 import argument_parsers
-
-from scipy.ndimage.filters import gaussian_filter
 
 
 def b1_map(XFL, output):
