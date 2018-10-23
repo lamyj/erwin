@@ -12,7 +12,9 @@ import nibabel
 import numpy
 import scipy.ndimage
 
+sys.path.insert(0, '..')
 import argument_parsers
+
 
 def b1_map(AFI, output):
     """B1 map generation"""

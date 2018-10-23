@@ -10,6 +10,7 @@ import dicomifier
 import nibabel
 import numpy
 
+sys.path.insert(0, '..')
 import argument_parsers
 
 
@@ -19,6 +20,7 @@ R1_A = 0.606 # [s^-1]
 ALPHA = 0.68
 
 MASK_THRESHOLD = 600
+
 
 def cbf_map(pCASL, M0, output):
     """ CBF map """

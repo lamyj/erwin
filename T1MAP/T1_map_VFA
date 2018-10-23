@@ -7,7 +7,9 @@ import sys
 import nibabel
 import numpy
 
+sys.path.insert(0, '..')
 import argument_parsers
+
 
 def t1_map(VFA, B1_map, T1_map_path, M0_path):
     """T1 map generation"""

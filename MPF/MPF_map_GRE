@@ -13,9 +13,11 @@ import numpy
 import scipy.integrate
 import scipy.optimize
 
+sys.path.insert(0, '..')
 import argument_parsers
 import pyximport; pyximport.install()
 import mpf
+
 
 def qmti_map(image1, image2, B0_map, B1_map, T1_map, MTR_path, MPF_path):
     """ qMTI map """

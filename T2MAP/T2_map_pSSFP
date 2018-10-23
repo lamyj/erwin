@@ -11,7 +11,9 @@ import dicomifier
 import nibabel
 import numpy
 
+sys.path.insert(0, '..')
 import argument_parsers
+
 
 def t2_map(pSSFP, B1_map, output):
     """T2 map generation"""

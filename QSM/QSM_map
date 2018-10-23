@@ -6,7 +6,9 @@ import logging
 import argparse
 import subprocess
 
+sys.path.insert(0, '..')
 import argument_parsers
+
 
 VOXEL_SIZE = [1, 1, 1] # [mm]
 PAD_SIZE = [24, 24, 24]

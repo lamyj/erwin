@@ -7,10 +7,13 @@ import sys
 import nibabel
 import numpy
 
+sys.path.insert(0, '..')
 import argument_parsers
+
 
 T1_MIN = 0.1
 T1_MAX = 10
+
 
 def t1_map(PDw, T1w, rB1_map, output):
     """T1 map generation"""

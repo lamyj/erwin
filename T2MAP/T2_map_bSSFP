@@ -10,9 +10,11 @@ import dicomifier
 import nibabel
 import numpy
 
+sys.path.insert(0, '..')
 import argument_parsers
 
 import scipy.ndimage.filters
+
 
 def t2_map(bSSFP, rB1_map, T1_map, output):
     """T2 map generation"""

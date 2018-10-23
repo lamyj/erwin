@@ -10,6 +10,7 @@ import nibabel
 import argparse
 import dicomifier
 
+sys.path.insert(0, '..')
 import argument_parsers
 
 

@@ -7,7 +7,9 @@ import sys
 import nibabel
 import numpy
 
+sys.path.insert(0, '..')
 import argument_parsers
+
 
 def b0_map(GRE, output):
     """B0 map generation"""
