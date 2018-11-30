@@ -1,80 +1,133 @@
 #!/usr/bin/env python3
 
-import argparse
-import logging
 import sys
-
-import nibabel
 import numpy
+import logging
+import nibabel
+import argparse
+import subprocess
 
-sys.path.insert(0, '..')
 import argument_parsers
-
 
 T1_MIN = 0.1
 T1_MAX = 10
 
 
-def t1_map(PDw, T1w, rB1_map, output):
+def t1_map(PDw, T1w, rB1_map, oT1_map, oR1_map):
     """T1 map generation"""
            
-    # Loading datas
+    CRF = rB1_map.get_data().astype(numpy.float32)*1e-2
+    
+    # Read T1-FA datas
     FA = [] # [°]
     TR = [] # [s]
-    S = []
-    ind = 0
-    for image, meta_data in [PDw, T1w]: 
-        FA.append(meta_data['FlipAngle'][0])
-        TR.append(meta_data['RepetitionTime'][0]*1e-3)
-        if ind is 0:
-            shape = image.get_data().shape
-            S = numpy.zeros((shape[0], shape[1], shape[2], 2))
-            S[:,:,:,ind] = image.get_data().astype(numpy.float32).sum(3)
-            ind = ind + 1
-        S[:,:,:,ind] = image.get_data().astype(numpy.float32).sum(3)
- 
-    if TR[0] != TR[1]:
-        raise Exception('TR are different: {}'.format(TR))    
+    S = {}
+    
+    FA = [numpy.radians(meta_data['FlipAngle'][0]) for _, meta_data in [PDw, T1w]] # [rad]
+    TR = [meta_data['RepetitionTime'][0]*1e-3 for _, meta_data in [PDw, T1w]] # [s]
+    
+    logging.debug('FA = {} degrees'.format(numpy.degrees(FA)))
     logging.debug('TR = {} ms'.format(numpy.multiply(TR, 1e3)))
     if FA[0] == FA[1]:
-        raise Exception('FA are equals: {}'.format(FA))    
-    logging.debug('FA = {} degrees'.format(FA))
+        raise Exception('FA are similar: {}'.format(FA))
+    if TR[0] != TR[1]:
+        raise Exception('TR are different: {}'.format(TR))
     
-    data_rB1 = rB1_map.get_data().astype(numpy.float32)*1e-2
+    # Compute T1map
+    S = [x[0].get_data().astype(numpy.float32).sum(3) for x in [PDw, T1w]]
+    rFA = [fa*CRF for fa in FA]
+    X = numpy.divide(S, numpy.tan(rFA))
+    Y = numpy.divide(S, numpy.sin(rFA))
     
-    # Computing T1 map
-    X1 = numpy.divide(S[:,:,:,0], numpy.tan(numpy.radians(FA[0]*data_rB1)))
-    X2 = numpy.divide(S[:,:,:,1], numpy.tan(numpy.radians(FA[1]*data_rB1)))
-
-    Y1 = numpy.divide(S[:,:,:,0], numpy.sin(numpy.radians(FA[0]*data_rB1)))
-    Y2 = numpy.divide(S[:,:,:,1], numpy.sin(numpy.radians(FA[1]*data_rB1)))
-    
-    m = (Y2 - Y1)/(X2 - X1)
+    m = (Y[0]-Y[1]) / (X[0]-X[1])
     m[m<=0] = numpy.nan
+    b = Y[0] - m*X[0]
+    
     T1_app = -TR[0] / numpy.log(m)
-
-    A, B = preibisch_parameters(data_rB1)
-
+    
+    pA, pB = estimate_preibisch_params(TR[0], numpy.degrees(FA))
+    A = numpy.polyval(pA, CRF)
+    B = numpy.polyval(pB, CRF)
     T1_map = A + B*T1_app
+    
     T1_map = numpy.real(T1_map)
     
     T1_map[T1_map < T1_MIN] = numpy.nan
     T1_map[T1_map > T1_MAX] = numpy.nan
     
-    oimg = nibabel.Nifti1Image(T1_map, PDw[0].affine)
-    nibabel.save(oimg, output)
+    oimg = nibabel.Nifti1Image(T1_map, PDw[0].affine) # [s]
+    nibabel.save(oimg, oT1_map)
     
-    
-def preibisch_parameters(CRF): #TODO: compute the poly estimation (script in iadpat)
-    """ Preibisch parameters 
-        Influence of RF Spoiling on the Stability and Accuracy of T1 Mapping 
-        Based on Spoiled FLASH With Varying Flip Angles (Preibisch, 2003)
-    """
-    A = 0.275 * CRF**2 - 0.359 * CRF + 0.142 # [s]
-    B = -0.33 * CRF**2 + 0.25 * CRF + 0.92
-    return A, B
+    oimg = nibabel.Nifti1Image(1/T1_map, PDw[0].affine) # [s^-1]
+    nibabel.save(oimg, oR1_map)
     
 
+def estimate_preibisch_params(TR, FA):
+
+    _PHI_INC = 50 # [°]
+    _CRF = numpy.arange(0.7, 1.3, 0.1)
+    n_CRF = len(_CRF)
+
+    n_T1 = 20
+    T1 = numpy.linspace(0.6, 1.8, n_T1) # [s]
+    T2 = 80e-3 # [s]
+    
+    T1app = numpy.zeros((n_T1, n_CRF))
+    PDapp = numpy.zeros((n_T1, n_CRF))
+    A = numpy.zeros((n_CRF))
+    B = numpy.zeros((n_CRF))
+    
+    for k in range(0, n_CRF):
+        for i in range(0, n_T1):
+            x = []
+            y = []
+            for j in range(0, 2):
+                tmp = interpret_SPGR(FA[j]*_CRF[k], _PHI_INC, TR, T1[i], T2) 
+                x.append(tmp*numpy.radians(FA[j]))
+                y.append(tmp/numpy.radians(FA[j]))
+            
+            X = numpy.concatenate( (numpy.ones(len(x), dtype=int).reshape((-1, 1)), 
+                                numpy.array(x).reshape((-1, 1))), 
+                                axis=1)
+            Y = numpy.array(y).reshape((-1, 1))
+            F = numpy.linalg.lstsq(X, Y)
+            
+            b = F[0][0] # = the intercept = rho [Eq. 3] 
+            m = F[0][1] # = the slope =  -T1/(2*TR)
+
+            T1app[i,k] = -m*2*TR / numpy.power(_CRF[k], 2)
+            PDapp[i,k] = b
+
+        t1app = T1app[:,0]
+        
+        X = numpy.concatenate( (numpy.ones(len(t1app), dtype=int).reshape((-1, 1)), 
+                                numpy.array(t1app).reshape((-1, 1))), 
+                                axis=1)
+        Y = T1.reshape((-1, 1))
+        H = numpy.linalg.lstsq(X, Y)
+        A[k] = H[0][0] # the intercept 
+        B[k] = H[0][1] # the slope     
+
+    pA = numpy.polyfit(_CRF, A, 2)
+    pB = numpy.polyfit(_CRF, B, 2)
+    
+    return pA, pB
+  
+
+def interpret_SPGR(FA, phi_inc, TR, T1, T2):
+
+    cmd = "./SPGR {} {} {} {} {}".format(FA, phi_inc, TR, T1, T2)
+    output = subprocess.check_output([cmd], shell=True)
+    tmp = []
+    for char in output:
+        if char is not 10: # \n
+            tmp.append(chr(char))
+
+    res = float(''.join(tmp))
+    
+    return res
+  
+    
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
@@ -91,7 +144,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "rB1_map", type=argument_parsers.image_type,
         help="Path to the rB1 map")
-    parser.add_argument("output", help="Path to the T1 map")
+    parser.add_argument("oT1_map", help="Path to the T1 map")
+    parser.add_argument("oR1_map", help="Path to the R1 map")
     parser.add_argument(
         "-v", "--verbose", 
         default = 'warning', choices=["debug", "info", "warning"],
