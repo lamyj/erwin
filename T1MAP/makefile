@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-W -Wall
 LDFLAGS=-lm
-EXEC=SPGR
+EXEC=SPGR_EPG
 
 all: $(EXEC)
 

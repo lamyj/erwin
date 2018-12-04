@@ -116,16 +116,10 @@ def estimate_preibisch_params(TR, FA):
 
 def interpret_SPGR(FA, phi_inc, TR, T1, T2):
 
-    cmd = "./SPGR {} {} {} {} {}".format(FA, phi_inc, TR, T1, T2)
+    cmd = "./SPGR_EPG {} {} {} {} {}".format(FA, phi_inc, TR, T1, T2)
     output = subprocess.check_output([cmd], shell=True)
-    tmp = []
-    for char in output:
-        if char is not 10: # \n
-            tmp.append(chr(char))
-
-    res = float(''.join(tmp))
     
-    return res
+    return float(output)
   
     
 if __name__ == "__main__":
