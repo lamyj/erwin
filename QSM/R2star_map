@@ -10,78 +10,46 @@ import argparse
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import argument_parsers
 
+def r2star_map(MGE, R2_star_path):
+    """ Compute R2* (in 1/s). """
 
-def r2star_map(magnitude, mask, GRE, oR2, oT2, oS0):
-    """ QSM map """
-    
-    # Get echo times
-    TE = [x[0] for x in GRE[1]["EchoTime"]]
+    # NOTE: we expect divide by 0 errors when computing the log in the image
+    # background
+    numpy.seterr(divide="ignore")
 
-    # R2* mapping  
-    r2_star(magnitude, mask, TE, oR2, oT2, oS0)
-
-
-def r2_star(mag_filename, mask_filename, TE, oR2, oT2, oS0):
-    """ Compute S0, T2* and R2*. """
+    TE = numpy.divide([x[0] for x in MGE[1]["EchoTime"]], 1e3) # ms -> s
     
-    img = nibabel.load(mag_filename)
-    comb_mag = img.get_data().astype(numpy.float32)
+    coefficients = numpy.ones((len(TE), 2))
+    coefficients[:,1] = -TE
     
-    mask = nibabel.load(mask_filename).get_data().astype(numpy.float32)
+    log_MGE = numpy.log(MGE[0].get_data())
     
-    T2_star = numpy.zeros(comb_mag[:,:,:,0].shape)
-    S0 = numpy.zeros(comb_mag[:,:,:,0].shape)
+    # NOTE: lstsq does not broadcast as of numpy 1.15
+    log_MGE = log_MGE.reshape((-1, log_MGE.shape[-1]), order="F")
+    solution = numpy.apply_along_axis(
+        lambda x: numpy.linalg.lstsq(coefficients, x, rcond=-1)[0], 1, log_MGE)
+    R2_star = solution[:, 1]
     
-    TE_tmp = numpy.ones((len(TE), 2))
-    TE_tmp[:,1] = numpy.squeeze(TE).astype(numpy.float32)
-    
-    for i in range(0, comb_mag.shape[0]):
-        for j in range(0, comb_mag.shape[1]):
-            for k in range(0, comb_mag.shape[2]):
-                s = comb_mag[i,j,k,:]
-                y = numpy.log(s)
-                b = numpy.linalg.lstsq(TE_tmp, y, rcond=-1)[0]
-                    
-                T2_star[i,j,k] = -1/b[1]
-                S0[i,j,k] = b[0]
-                
-    S0 = S0*mask
-    S0[T2_star < 0] = numpy.nan # WARNING: S0 does not have to be integer typed
-    
-    T2_star = T2_star*mask # [ms]
-    T2_star[T2_star < 0] = numpy.nan   
-    
-    R2_star = 1/T2_star*1e3*mask # [s^-1]
-        
-    oimg = nibabel.Nifti1Image(S0, img.affine)
-    nibabel.save(oimg, oS0)
-    
-    oimg = nibabel.Nifti1Image(T2_star, img.affine)
-    nibabel.save(oimg, oT2)
-    
-    oimg = nibabel.Nifti1Image(R2_star, img.affine)
-    nibabel.save(oimg, oR2)
-       
+    # WARNING: numpy has C-order by default
+    R2_star = R2_star.reshape(MGE[0].shape[:-1], order="F")
+    nibabel.save(nibabel.Nifti1Image(R2_star, MGE[0].affine), R2_star_path)
 
 if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description="R2*, T2* and S0 map generation.")
+    parser = argparse.ArgumentParser(
+        description="Compute the R2* map from a 4D MGE magnitude image.")
     
-    parser.add_argument("magnitude", help="Magnitude 4D combination image")
-    parser.add_argument("mask", help="Brain mask image")
-    parser.add_argument("GRE", type=argument_parsers.image_and_meta_data_type, 
-                        help="Path to one GRE image (magnitude or phase)")
-    parser.add_argument("oR2", help="R2* result")
-    parser.add_argument("oT2", help="T2* result")
-    parser.add_argument("oS0", help="S0 result")
+    parser.add_argument(
+        "MGE", type=argument_parsers.image_and_meta_data_type,
+        help="Multi gradient echo magnitude image")
+    parser.add_argument("R2_star_path", metavar="R2_star", help="R2*")
     parser.add_argument(
             "-v", "--verbose", 
             default = 'WARNING', choices=["DEBUG", "INFO", "WARNING"],
             metavar="LEVEL", help="logging level (default: WARNING)")
     args = vars(parser.parse_args())
-        
+    
     logging.basicConfig(level=args.pop('verbose').upper())    
-        
+    
     try: 
         sys.exit(r2star_map(**args))
     except Exception as e:
@@ -89,4 +57,3 @@ if __name__ == "__main__":
             raise
         else:
             parser.error(e)
-
