@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import re
 import sys
 import numpy
@@ -9,7 +10,7 @@ import nibabel
 import argparse
 import dicomifier
 
-sys.path.insert(0, '..')
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import argument_parsers
 
 
