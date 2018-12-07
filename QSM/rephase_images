@@ -3,6 +3,7 @@
 import os
 import re
 import sys
+import json
 import numpy
 import base64
 import logging
@@ -31,7 +32,8 @@ def rephase_images(GRE, omag, ophase, oHvector, ocomb):
     # Save rephased image as nifti files
     save_4D_images(comb_mag, comb_phase, magnitude_files, output_path, ocomb, omag, ophase, img_affine)
     save_H_vector(oHvector, H_vector)
-    
+    save_metadata(GRE[1][1], omag.replace(".nii.gz",".json"))
+    save_metadata(GRE[1][1], ophase.replace(".nii.gz",".json"))
 
 def separate_images(GRE, output_path):    
        
@@ -235,7 +237,18 @@ def save_H_vector(oHvector, H_vector):
     for h in H_vector:
         f.write('{}\n'.format(h))
     f.close() 
+
+
+def save_metadata(metadata, ojson):
     
+    ometadata = {}
+    ometadata["EchoTime"] = metadata["EchoTime"]
+    ometadata["RepetitionTime"] = metadata["RepetitionTime"]
+    ometadata["FlipAngle"] = metadata["FlipAngle"]
+    
+    with open(ojson, 'w') as fd:
+        json.dump(ometadata, fd)
+
 
 if __name__ == "__main__":
 

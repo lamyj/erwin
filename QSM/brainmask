@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import logging
+import argparse
+import subprocess
+
+
+def extract_mask(t1w, comb_mag, omask):
+    """ Generate a brain mask based on the BET2 FSL extraction. """
+     
+    output_path = os.path.split(omask)[0]
+    
+    mask_T1w = bet(t1w, output_path)    
+    registered(t1w, comb_mag, mask_T1w, output_path, omask)
+    
+
+def bet(t1w, result_path):
+    """ Generate a brain mask based on the BET2 FSL extraction. """
+
+    subprocess.check_call(["bet2", 
+                         t1w,
+                         os.path.join(result_path,'tmp'),
+                         '-m',
+                         '-n'
+                         ])
+    
+    omask_T1w = os.path.join(result_path,'brainmask_in_T1w.nii.gz')
+    subprocess.check_call(['mv', 
+                           os.path.join(result_path,'tmp_mask.nii.gz'), 
+                           omask_T1w
+                           ])
+    
+    return omask_T1w
+
+
+def registered(t1w, comb_mag, mask_T1w, result_path, omask):
+    """ Rigid registration with nearest neighbors interpolation using ANTs. """
+    
+    oregistered = os.path.join(result_path, 'registered')    
+    subprocess.check_call(['antsRegistration',
+                           '-d', '3',
+                           '-o', oregistered,
+                           '-n', 'NearestNeighbor',
+                           '-m', 'MI[{},{},{},{}]'.format(comb_mag, t1w, 1, 32),
+                           '-t', 'Rigid[{}]'.format(0.1),
+                           '-c', '100x100x10',
+                           '-f', '6x4x2',
+                           '-s', '2x1x0'
+                           ])
+
+    subprocess.check_call(['antsApplyTransforms',
+                           '-d', '3',
+                           '-e', '0',
+                           '-i', mask_T1w,
+                           '-r', comb_mag,
+                           '-o', omask,
+                           '-n', 'NearestNeighbor',
+                           '-t', '{}0GenericAffine.mat'.format(oregistered)
+                           ])
+    
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="Extract brain mask from the T1w and register it onto the GRE.")
+        
+    parser.add_argument("t1w", help="T1 path")
+    parser.add_argument("comb_mag", help="Path to one combined GRE magnitude")
+    parser.add_argument("omask", help="GRE brain mask result")
+    parser.add_argument(
+            "-v", "--verbose", 
+            default = 'WARNING', choices=["DEBUG", "INFO", "WARNING"],
+            metavar="LEVEL", help="logging level (default: WARNING)")
+    args = vars(parser.parse_args())
+        
+    logging.basicConfig(level=args.pop('verbose').upper()) 
+            
+    try: 
+        sys.exit(extract_mask(**args))
+    except Exception as e:
+        if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
+            raise
+        else:
+            parser.error(e)
