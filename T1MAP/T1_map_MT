@@ -8,7 +8,9 @@ import nibabel
 import argparse
 import subprocess
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_HERE = os.path.dirname(os.path.abspath(__file__))
+
+sys.path.insert(0, os.path.dirname(_HERE))
 import argument_parsers
 
 T1_MIN = 0.1
@@ -118,7 +120,7 @@ def estimate_preibisch_params(TR, FA):
 
 def interpret_SPGR(FA, phi_inc, TR, T1, T2):
 
-    cmd = "./SPGR_EPG {} {} {} {} {}".format(FA, phi_inc, TR, T1, T2)
+    cmd = "{}/SPGR_EPG {} {} {} {} {}".format(_HERE, FA, phi_inc, TR, T1, T2)
     output = subprocess.check_output([cmd], shell=True)
     
     return float(output)
