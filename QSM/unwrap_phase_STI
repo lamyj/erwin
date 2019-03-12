@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import logging
+import argparse
+import subprocess
+
+
+VOXEL_SIZE = [1, 1, 1] # [mm]
+PAD_SIZE = [24, 24, 24]
+RADIUS = 14
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+def unwrap_phase(phase, mask, otissuephase):
+
+    # Setting absolute path to allow Matlab to find the images.
+    phase = set_absolute_path(phase) 
+    mask = set_absolute_path(mask)
+    otissuephase = set_absolute_path(otissuephase)
+    
+    # G(un)zip outside Matlab script because it requires Java (and Matlab is 
+    # launched without JVM) 
+    phase = check_gz(phase, 'input_gz')
+    mask = check_gz(mask, 'input_gz')
+    otissuephase = check_gz(otissuephase, 'output')
+
+    subprocess.check_call(["bash", 
+                         "{}/call_matlab.sh".format(HERE),
+                         "call_MRPhaseUnwrapVSHARP",
+                         phase,
+                         mask,
+                         "{}".format(VOXEL_SIZE[0]),
+                         "{}".format(VOXEL_SIZE[1]),
+                         "{}".format(VOXEL_SIZE[2]),
+                         "{}".format(PAD_SIZE[0]),
+                         "{}".format(PAD_SIZE[1]),
+                         "{}".format(PAD_SIZE[2]),
+                         otissuephase.replace('.gz','')
+                         ])
+
+    subprocess.check_call(["gzip", "-f", otissuephase.replace('.gz','')])
+    subprocess.check_call(["gzip", "-f", phase])
+    
+
+def set_absolute_path(filename):
+    if os.path.dirname(filename) == '':
+        filename = os.path.join(os.getcwd(), filename)
+    return filename
+
+
+def check_gz(filename, type):
+
+    if filename.find('gz') is not -1:
+        if not os.path.isfile(filename[:-3]) and type is 'input_gz':  
+            subprocess.check_call(["gunzip", filename])
+        filename = filename[:-3]        
+
+    return filename
+    
+    
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="QSM preprocessing - unwrapping phase image based on STI Suite.")
+    
+    parser.add_argument("phase", help="Phase 4D combination image")
+    parser.add_argument("mask", help="Brain mask for the GRE QSM")
+    parser.add_argument("otissuephase", help="Tissue phase estimated result")
+    parser.add_argument(
+            "-v", "--verbose", 
+            default = 'WARNING', choices=["DEBUG", "INFO", "WARNING"],
+            metavar="LEVEL", help="logging level (default: WARNING)")
+    args = vars(parser.parse_args())
+        
+    logging.basicConfig(level=args.pop('verbose').upper()) 
+            
+    try: 
+        sys.exit(unwrap_phase(**args))
+    except Exception as e:
+        if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
+            raise
+        else:
+            parser.error(e)

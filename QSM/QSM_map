@@ -13,6 +13,8 @@ import argument_parsers
 VOXEL_SIZE = [1, 1, 1] # [mm]
 PAD_SIZE = [24, 24, 24]
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+
 
 def qsm_map(tissue_phase, mask, GRE, H_path, oqsm):
     """ QSM map """
@@ -27,6 +29,13 @@ def qsm_map(tissue_phase, mask, GRE, H_path, oqsm):
 def fQSM(tissue_phase_filename, mask_filename, TE, h_path, oqsm):
     """ Compute QSM calculus based on STI Suite algorithm iLSQR. """
         
+    # Setting absolute path to allow Matlab to find the images.
+    mask_filename = set_absolute_path(tissue_phase_filename) 
+    mask_filename = set_absolute_path(mask_filename)
+    oqsm = set_absolute_path(oqsm)
+    
+    # G(un)zip outside Matlab script because it requires Java (and Matlab is 
+    # launched without JVM) 
     tissue_phase_filename = check_gz(tissue_phase_filename, 'input_gz')
     mask_filename = check_gz(mask_filename, 'input_nii_gz')
     oqsm = check_gz(oqsm, 'output')
@@ -38,7 +47,7 @@ def fQSM(tissue_phase_filename, mask_filename, TE, h_path, oqsm):
     f.close() 
     
     subprocess.check_call(["bash", 
-                         "{}/call_matlab.sh".format(os.getcwd()),
+                         "{}/call_matlab.sh".format(HERE),
                          "call_iLSQR",
                          tissue_phase_filename,
                          mask_filename,
@@ -62,6 +71,12 @@ def fQSM(tissue_phase_filename, mask_filename, TE, h_path, oqsm):
 
     subprocess.check_call(["gzip", "-f", oqsm])
     subprocess.check_call(["gzip", "-f", tissue_phase_filename])
+
+
+def set_absolute_path(filename):
+    if os.path.dirname(filename) == '':
+        filename = os.path.join(os.getcwd(), filename)
+    return filename
 
 
 def check_gz(filename, type):

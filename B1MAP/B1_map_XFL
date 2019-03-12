@@ -16,7 +16,7 @@ import argument_parsers
 
 def b1_map(XFL, output):
     """B1 map generation"""
-    
+
     image, meta_data = XFL
     
     FA = meta_data['FlipAngle'][0] # [deg]

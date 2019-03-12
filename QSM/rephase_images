@@ -15,10 +15,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import argument_parsers
 
 
-def rephase_images(GRE, omag, ophase, oHvector, ocomb):
+def rephase_images(GRE, omag4D, ophase4D):
     """ Rephase images """
     
-    output_path = os.path.split(omag)[0]
+    output_path = os.path.split(omag4D)[0]
     
     # Separate magnitude and phase images
     magnitude_files, phase_files = separate_images(GRE, output_path)
@@ -27,13 +27,12 @@ def rephase_images(GRE, omag, ophase, oHvector, ocomb):
     ref_phase, img_affine = calculate_phase_reference(magnitude_files, phase_files)    
     
     # Rephase and combine images (Santini method)
-    comb_mag, comb_phase, H_vector = rephase_images_Santini(magnitude_files, phase_files, ref_phase)
+    comb_mag, comb_phase = rephase_images_Santini(magnitude_files, phase_files, ref_phase)
         
     # Save rephased image as nifti files
-    save_4D_images(comb_mag, comb_phase, magnitude_files, output_path, ocomb, omag, ophase, img_affine)
-    save_H_vector(oHvector, H_vector)
-    save_metadata(GRE[1][1], omag.replace(".nii.gz",".json"))
-    save_metadata(GRE[1][1], ophase.replace(".nii.gz",".json"))
+    save_4D_images(comb_mag, comb_phase, magnitude_files, output_path, omag4D, ophase4D, img_affine)
+    save_metadata(GRE[1][1], omag4D.replace(".nii.gz",".json"))
+    save_metadata(GRE[1][1], ophase4D.replace(".nii.gz",".json"))
 
 def separate_images(GRE, output_path):    
        
@@ -125,19 +124,40 @@ def rephase_images_Santini(magnitude_files, phase_files, ref_phase):
         P = img.get_data().astype(numpy.float64)
             
         P = P/4096 * numpy.pi # [rad]
+        
+        if TE == 0:
+            print("Compute virtual coil one for nTE={}".format(TE))
+            conj_virtual_coil = get_virtual_coil(M, P, ref_phase)
             
-        comb_mag, comb_phase = QSM_PhaseRecoMultiCoils_Santini_2steps(M, P, ref_phase, TE)
+        comb_mag, comb_phase = QSM_PhaseRecoMultiCoils_Santini_2steps(M, P, ref_phase, TE, conj_virtual_coil)
         
         PHASE[:,:,:,TE] = comb_phase
         
         MAG[:,:,:,TE] = numpy.around(comb_mag)
         
-    H_vector = img.affine[0:3,2]
+    return MAG, PHASE
     
-    return MAG, PHASE, H_vector
-        
 
-def QSM_PhaseRecoMultiCoils_Santini_2steps(M, P, ref_phase, TE):
+def get_virtual_coil(M, P, ref_phase):
+    """ Calculate the virtual coil for the signal at TE1. """
+        
+    nb_coils = M.shape[3]
+    C = M * numpy.exp( 1j * P )
+
+    # Force a 0 phase where sensitivity is the best for each echo: this gives the virtual coil reference
+    rephased_image = numpy.zeros(P.shape, dtype=complex)
+    for coil in range(0,nb_coils):
+        rephased_image[:,:,:,coil] = C[:,:,:,coil] / numpy.exp( 1j * ref_phase[coil] )
+
+    rephased_image = numpy.where(rephased_image != (-0. -0.j), rephased_image, 0)
+    
+    virtual_coil = rephased_image.sum(3) # Weighted sum by the Signal itself
+    conj_virtual_coil = numpy.conjugate(virtual_coil)
+    
+    return conj_virtual_coil
+    
+
+def QSM_PhaseRecoMultiCoils_Santini_2steps(M, P, ref_phase, TE, conj_virtual_coil):
     """ Based on
     Parker et al, MRM 72:563-569 (2014) -- "Phase reconstruction from Multiple 
     Coil Data Using a Virtual Reference Coil" """
@@ -154,8 +174,8 @@ def QSM_PhaseRecoMultiCoils_Santini_2steps(M, P, ref_phase, TE):
 
     rephased_image = numpy.where(rephased_image != (-0. -0.j), rephased_image, 0)
     
-    virtual_coil = rephased_image.sum(3) # Weighted sum by the Signal itself
-    conj_virtual_coil = numpy.conjugate(virtual_coil)
+#    virtual_coil = rephased_image.sum(3) # Weighted sum by the Signal itself
+#    conj_virtual_coil = numpy.conjugate(virtual_coil)
               
     difference = numpy.zeros(rephased_image.shape)
     for coil in range(0, nb_coils):  
@@ -212,32 +232,23 @@ def repmat_2Dto4D(mat, dim3, dim4):
     return mat_4D
 
 
-def save_4D_images(comb_mag, comb_phase, magnitude_files, output_path, ocomb, omag, ophase, img_affine):
+def save_4D_images(comb_mag, comb_phase, magnitude_files, output_path, omag4D, ophase4D, img_affine):
     """ Save processed datas in a same data according to their type. """
     
     for TE in range(0, comb_mag.shape[3]):
         
         oimg = nibabel.Nifti1Image(comb_mag[:,:,:,TE], img_affine)
-        nibabel.save(oimg, "{}_{}_magnitude.nii.gz".format(ocomb, format(TE+1)))
+        nibabel.save(oimg, "qsm_combined_{}_magnitude.nii.gz".format(format(TE+1)))
         
         oimg = nibabel.Nifti1Image(comb_phase[:,:,:,TE], img_affine)
-        nibabel.save(oimg, "{}_{}_phase.nii.gz".format(ocomb, format(TE+1)))
+        nibabel.save(oimg, "qsm_combined_{}_phase.nii.gz".format(format(TE+1)))
         
     oimg = nibabel.Nifti1Image(comb_mag, img_affine)
-    nibabel.save(oimg, omag)
+    nibabel.save(oimg, omag4D)
     
     oimg = nibabel.Nifti1Image(comb_phase, img_affine)
-    nibabel.save(oimg, ophase)
+    nibabel.save(oimg, ophase4D)
     
-
-def save_H_vector(oHvector, H_vector):
-    """ Save the magnetic field vector. """
-    
-    f = open( oHvector, "w")     
-    for h in H_vector:
-        f.write('{}\n'.format(h))
-    f.close() 
-
 
 def save_metadata(metadata, ojson):
     
@@ -257,10 +268,8 @@ if __name__ == "__main__":
     parser.add_argument(
             "GRE", type=argument_parsers.image_and_meta_data_type, nargs=2, 
             help="Path to the GRE images (magnitude and phase, in any order)")
-    parser.add_argument("omag", help="Magnitude-4D result")
-    parser.add_argument("ophase", help="Phase-4D result")
-    parser.add_argument("oHvector", help="Magnetic field vector result")
-    parser.add_argument("ocomb", help="Prefix for combined images")
+    parser.add_argument("omag4D", help="Magnitude-4D result")
+    parser.add_argument("ophase4D", help="Phase-4D result")
     parser.add_argument(
             "-v", "--verbose", 
             default = 'warning', choices=["debug", "info", "warning"],

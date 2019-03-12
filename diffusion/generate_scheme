@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+
+import argparse
+import base64
+import json
+import logging
+import sys
+
+import dicomifier
+import numpy
+
+def dwi_setup(meta_data_path, output):
+    """Getting bvals and bvecs."""
+   
+    with open(meta_data_path) as f:
+        meta_data = json.load(f)
+    
+    csa  = [
+        dicomifier.dicom_to_nifti.siemens.parse_csa(base64.b64decode(x[0]))
+        for x in meta_data["00291010"]]
+    
+    directions = [x.get("DiffusionGradientDirection") for x in csa]
+    # b=0 has no direction value, set an arbitrary one
+    directions = [x if x else [0,0,0] for x in directions]
+    b_values = [x.get("B_value") for x in csa]
+    
+    # 3 first columns for bvec, the last one for bvalue
+    scheme = numpy.hstack((directions, b_values))
+    
+    numpy.savetxt(output, scheme)
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(
+        description="Generate an Mrtrix diffusion scheme from Siemens DICOM" 
+            "meta-data")
+    parser.add_argument(
+        "meta_data_path", metavar='meta_data', help="DTI metadata")
+    parser.add_argument("output", help="Scheme output path")
+    parser.add_argument(
+        "-v", "--verbose", 
+        default = 'warning', choices=["debug", "info", "warning"],
+        metavar="LEVEL", help="Logging level (default: warning)")
+    args = vars(parser.parse_args())
+    
+    logging.basicConfig(level=args.pop('verbose').upper())
+        
+    try:
+        sys.exit(dwi_setup(**args))
+    except Exception as e:
+        if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
+            raise
+        else:
+            parser.error(e)

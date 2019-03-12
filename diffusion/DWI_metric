@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+
+import argparse
+import logging
+import os
+import sys
+
+import subprocess
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def compute_metric(tensor, metric, output):
+    
+    # Setting absolute for MRtrix
+    tensor = set_absolute_path(tensor)
+    output = set_absolute_path(output) 
+    subprocess.check_call(["tensor2metric", "-force", "-quiet", "-{}".format(metric), output, tensor])
+    
+
+def set_absolute_path(filename):
+    if os.path.dirname(filename) == '':
+        filename = os.path.join(os.getcwd(), filename)
+    return filename
+    
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(
+        description="")
+    
+    parser.add_argument("tensor", help="Tensor image")
+    parser.add_argument("metric", help="Metric calculus")
+    parser.add_argument("output", help="Output image")
+    parser.add_argument(
+        "-v", "--verbose", 
+        default = 'warning', choices=["debug", "info", "warning"],
+        metavar="LEVEL", help="Logging level (default: warning)")
+    args = vars(parser.parse_args())
+    
+    logging.basicConfig(level=args.pop('verbose').upper())
+
+    try:
+        sys.exit(compute_metric(**args))
+    except Exception as e:
+        if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
+            raise
+        else:
+            parser.error(e)

@@ -17,7 +17,7 @@ import argument_parsers
 import scipy.ndimage.filters
 
 
-def t2_map(bSSFP, rB1_map, T1_map, output):
+def t2_map(bSSFP, rB1_map, T1_map, oT2_map, oR2_map):
     """T2 map generation"""
    
     # Loading B1 map, T1 map and T1w data
@@ -69,8 +69,11 @@ def t2_map(bSSFP, rB1_map, T1_map, output):
     T2_map = numpy.sqrt(8/(3*4))*numpy.sqrt(numpy.nansum(numpy.power(tau,2),3)) 
     T2_map[data_T1 == 0] = numpy.nan
             
-    oimg = nibabel.Nifti1Image(T2_map*1e3, bSSFP[0][0].affine) # [ms]
-    nibabel.save(oimg, output)
+    oimg = nibabel.Nifti1Image(T2_map, bSSFP[0][0].affine) # [s]
+    nibabel.save(oimg, oT2_map)
+    
+    oimg = nibabel.Nifti1Image(1/T2_map, bSSFP[0][0].affine) # [s^-1]
+    nibabel.save(oimg, oR2_map)
 
     
 def get_phase_increment(meta_data):
@@ -101,7 +104,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "T1_map", type=argument_parsers.image_type,
         help="Path to the T1 map")
-    parser.add_argument("output", help="Path to the T2 map")
+    parser.add_argument("oT2_map", help="Path to the T2 map")
+    parser.add_argument("oR2_map", help="Path to the R2 map")
     parser.add_argument(
         "-v", "--verbose", 
         default = 'warning', choices=["debug", "info", "warning"],

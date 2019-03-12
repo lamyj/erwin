@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import argument_parsers
 
 
-def t2_map(pSSFP, B1_map, output):
+def t2_map(pSSFP, B1_map, oT2_map, oR2_map):
     """T2 map generation"""
    
     data_rB1 = B1_map.get_data().astype(numpy.float32)*1e-2 
@@ -59,8 +59,11 @@ def t2_map(pSSFP, B1_map, output):
     T2_est = 2*TR[0]*numpy.sqrt(A)/xi    
     T2_map = numpy.absolute( T2_est / (1 - 3/2 * calculate_eta(FA) * T2_est / T1_global) )
         
-    oimg = nibabel.Nifti1Image(T2_map, pSSFP[0][0].affine)
-    nibabel.save(oimg, output)
+    oimg = nibabel.Nifti1Image(T2_map, pSSFP[0][0].affine) # [s]
+    nibabel.save(oimg, oT2_map)
+    
+    oimg = nibabel.Nifti1Image(1/T2_map, pSSFP[0][0].affine) # [s^-1]
+    nibabel.save(oimg, oR2_map)
 
     
 def get_phase_increment(meta_data):
@@ -120,7 +123,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "B1_map", type=argument_parsers.image_type,
         help="Path to the B1 map (in the same voxel space as the pSSFP)")
-    parser.add_argument("output", help="Path to the T2 map")
+    parser.add_argument("oT2_map", help="Path to the T2 map")
+    parser.add_argument("oR2_map", help="Path to the R2 map")
     parser.add_argument(
         "-v", "--verbose", 
         default = 'warning', choices=["debug", "info", "warning"],

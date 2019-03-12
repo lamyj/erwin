@@ -17,11 +17,13 @@ RADIUS = 14
 
 UNWRAPP = ''
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+
 
 def unwrap_phase(phase, comb_mag, mask, otissuephase):
 
     output_path = os.path.split(otissuephase)[0]
-
+    
     # Phase unwrapping and V-SHARP ...
     if UNWRAPP is 'FSL':
         # ... using PRELUDE from FSL to unwrap the phase and then VSHARP from STISUITE
@@ -40,8 +42,9 @@ def phase_unwrapping_vsharp(phase_filename, mask_filename, otissuephase):
     mask_filename = check_gz(mask_filename, 'input_nii_gz')
     otissuephase = check_gz(otissuephase, 'output')
 
+    print(os.getcwd())
     subprocess.check_call(["bash", 
-                         "{}/call_matlab.sh".format(os.getcwd()),
+                         "{}/call_matlab.sh".format(HERE),
                          "call_MRPhaseUnwrapVSHARP",
                          phase_filename,
                          mask_filename,
@@ -94,7 +97,7 @@ def phase_vsharp(unwrappedphase_filename, mask_filename, otissuephase):
     otissuephase = check_gz(otissuephase, 'output')
         
     subprocess.check_call(["bash", 
-                         "{}/call_matlab.sh".format(os.getcwd()),
+                         "{}/call_matlab.sh".format(HERE),
                          "call_VSHARP",
                          unwrappedphase_filename,
                          mask_filename,

@@ -9,11 +9,22 @@ import subprocess
 
 def extract_mask(t1w, comb_mag, omask):
     """ Generate a brain mask based on the BET2 FSL extraction. """
-     
-    output_path = os.path.split(omask)[0]
+
+    opath = os.path.split(omask)[0]
     
-    mask_T1w = bet(t1w, output_path)    
-    registered(t1w, comb_mag, mask_T1w, output_path, omask)
+    # If the image is a 4D-volume ...
+    flag_extraction = 0
+    if int(subprocess.check_output(["mrinfo", comb_mag, "-ndim"])) == 4:
+        flag_extraction = 1
+        tmp = os.path.join(opath, comb_mag.split("/")[-1])
+        subprocess.check_call(["ImageMath", '4', tmp, "TimeSeriesSubset", comb_mag, '1'])
+        comb_mag = tmp.replace(".nii.gz","100.nii.gz")
+    
+    mask_T1w = bet(t1w, opath)    
+    registered(t1w, comb_mag, mask_T1w, opath, omask)
+    
+    if flag_extraction:
+        os.remove(comb_mag)
     
 
 def bet(t1w, result_path):

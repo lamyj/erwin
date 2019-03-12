@@ -15,6 +15,7 @@ import scipy.integrate
 import scipy.optimize
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import argument_parsers
 import pyximport; pyximport.install()
 import mpf
@@ -22,7 +23,7 @@ import mpf
 
 def qmti_map(PDw, MTw, rB0_map, rB1_map, T1_map, MTR_path, MPF_path):
     """ qMTI map """
-    
+
     # Read MT data
     FA = []
     TR = []
@@ -34,7 +35,8 @@ def qmti_map(PDw, MTw, rB0_map, rB1_map, T1_map, MTR_path, MPF_path):
         
         FA.append(math.radians(meta_data['FlipAngle'][0])) # [rad]
         TR.append(meta_data['RepetitionTime'][0]*1e-3) # [s]
-                
+
+#        subprocess.call("python3 read_metada.py", shell=True) #TODO
         MT_FA.append(math.radians(get_pulse_info(meta_data, "FA")))
         MT_length.append(get_pulse_info(meta_data, "length")*1e-6) # [s]
         MT_offset.append(get_pulse_info(meta_data, "offset")) # [Hz]
@@ -56,11 +58,11 @@ def qmti_map(PDw, MTw, rB0_map, rB1_map, T1_map, MTR_path, MPF_path):
     if FA[0] != FA[1]:
         raise Exception ('FA are different: {}'.format(FA))
     if MT_FA[0] == MT_FA[1]:
-        raise Exception ('MT_FA are equals: {}'.foramt(MT_FA))
+        raise Exception ('MT_FA are equals: {}'.format(MT_FA))
     if MT_length[0] != MT_length[1]:
-        raise Exception ('MT_length are different: {}'.foramt(MT_length))
+        raise Exception ('MT_length are different: {}'.format(MT_length))
     if MT_offset[0] != MT_offset[1]:
-        raise Exception ('MT_offset are different: {}'.foramt(MT_offset))
+        raise Exception ('MT_offset are different: {}'.format(MT_offset))
     
     logging.debug('FA: {} degrees'.format(numpy.degrees(FA)))
     logging.info('MT FA: {} degrees'.format(numpy.degrees(MT_FA)))
@@ -106,7 +108,7 @@ def qmti_map(PDw, MTw, rB0_map, rB1_map, T1_map, MTR_path, MPF_path):
     # ... by estimating the f value on each voxel for the model.
     f = estimate_f_map(R1, T2f, MT_length, df, TR, FA, w1rms, G, S_ratio, f0)
     
-    MPF = nibabel.Nifti1Image(f*1e2, image1[0].affine) # [%]
+    MPF = nibabel.Nifti1Image(f*1e2, image.affine) # [%]
     nibabel.save(MPF, MPF_path)
 
 
@@ -136,7 +138,7 @@ def estimate_G_superLorentzian():
 
     for i in range(1,int(nDelta)+1):
         tmp = T2b * numpy.sqrt(2/numpy.pi) * float(
-                scipy.integrate.quad(mpf.int_superLorentzian, 0, 1, args=(i, T2b))[0])
+                scipy.integrate.quad(mpf.int_superLorentzian, 0, 1, args=(i, T2b), limit=150)[0])
         G.append(float(tmp))
         
     return G
@@ -173,12 +175,12 @@ def w1rms_gaussian_pulse(tm, MT_FA):
     
     int_b1 = float(
         scipy.integrate.quad(
-            lambda t: gaussian_pulse(t, tm)/max_gaussian, 0, tm
+            lambda t: gaussian_pulse(t, tm)/max_gaussian, 0, tm, limit=150
         )[0])
     alpha = gammaH * int_b1
     int_b1_square = float(
         scipy.integrate.quad(
-            lambda t: gaussian_pulse(t, tm)**2/max_gaussian**2, 0, tm
+            lambda t: gaussian_pulse(t, tm)**2/max_gaussian**2, 0, tm, limit=150
         )[0])
     b1rms = numpy.sqrt( int_b1_square / tm ) 
     

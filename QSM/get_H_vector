@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import numpy
+import logging
+import nibabel
+import argparse
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def get_H_vector(mag, oHvector):
+    
+    img = nibabel.load(mag)
+    H_vector = img.affine[0:3,2]
+
+    save_H_vector(oHvector, H_vector)        
+    
+
+def save_H_vector(oHvector, H_vector):
+    """ Save the magnetic field vector. """
+    
+    f = open( oHvector, "w")     
+    for h in H_vector:
+        f.write('{}\n'.format(h))
+    f.close() 
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="QSM preprocessing - Extracting H vector.")
+
+    parser.add_argument("mag", help="Magnitude-4D")
+    parser.add_argument("oHvector", help="Magnetic field vector result")
+    parser.add_argument(
+            "-v", "--verbose", 
+            default = 'warning', choices=["debug", "info", "warning"],
+            metavar="LEVEL", help="Logging level (default: warning)")
+    args = vars(parser.parse_args())
+               
+    logging.basicConfig(level=args.pop('verbose').upper())
+            
+    numpy.seterr(divide="ignore", invalid="ignore")        
+    
+    try:
+        sys.exit(get_H_vector(**args))
+    except Exception as e:
+        if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
+            raise
+        else:
+            parser.error(e)

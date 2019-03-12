@@ -10,9 +10,8 @@ import argparse
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import argument_parsers
 
-def r2star_map(MGE, R2_star_path):
+def r2star_map(MGE, R2_star_path, T2_star_path):
     """ Compute R2* (in 1/s). """
-
     # NOTE: we expect divide by 0 errors when computing the log in the image
     # background
     numpy.seterr(divide="ignore")
@@ -33,6 +32,7 @@ def r2star_map(MGE, R2_star_path):
     # WARNING: numpy has C-order by default
     R2_star = R2_star.reshape(MGE[0].shape[:-1], order="F")
     nibabel.save(nibabel.Nifti1Image(R2_star, MGE[0].affine), R2_star_path)
+    nibabel.save(nibabel.Nifti1Image(1/R2_star, MGE[0].affine), T2_star_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -42,6 +42,7 @@ if __name__ == "__main__":
         "MGE", type=argument_parsers.image_and_meta_data_type,
         help="Multi gradient echo magnitude image")
     parser.add_argument("R2_star_path", metavar="R2_star", help="R2*")
+    parser.add_argument("T2_star_path", metavar="T2_star", help="T2*")
     parser.add_argument(
             "-v", "--verbose", 
             default = 'WARNING', choices=["DEBUG", "INFO", "WARNING"],
