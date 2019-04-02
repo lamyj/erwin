@@ -36,7 +36,6 @@ def qmti_map(PDw, MTw, rB0_map, rB1_map, T1_map, MTR_path, MPF_path):
         FA.append(math.radians(meta_data['FlipAngle'][0])) # [rad]
         TR.append(meta_data['RepetitionTime'][0]*1e-3) # [s]
 
-#        subprocess.call("python3 read_metada.py", shell=True) #TODO
         MT_FA.append(math.radians(get_pulse_info(meta_data, "FA")))
         MT_length.append(get_pulse_info(meta_data, "length")*1e-6) # [s]
         MT_offset.append(get_pulse_info(meta_data, "offset")) # [Hz]
@@ -98,15 +97,15 @@ def qmti_map(PDw, MTw, rB0_map, rB1_map, T1_map, MTR_path, MPF_path):
     f0 = 0.10
     G_tmp = estimate_G_superLorentzian() 
     G = lorentzian_shape(G_tmp, df)
-       
-    w1rms_nominal = w1rms_gaussian_pulse(MT_length, MT_FA)   
+    
+    w1rms_nominal = w1rms_gaussian_pulse(MT_length[0], MT_FA[1]) #MT_FA[1] -- MTw and no PDw for Yarnykh Eq.4
     w1rms = w1rms_nominal * B1map
     logging.debug("w1rms_nominal = {}".format(w1rms_nominal))
     logging.debug("min w1rms = {}".format(numpy.min(w1rms)))
     logging.debug("max w1rms = {}".format(numpy.max(w1rms)))
     
     # ... by estimating the f value on each voxel for the model.
-    f = estimate_f_map(R1, T2f, MT_length, df, TR, FA, w1rms, G, S_ratio, f0)
+    f = estimate_f_map(R1, T2f, MT_length[0], df, TR, FA, w1rms, G, S_ratio, f0)
     
     MPF = nibabel.Nifti1Image(f*1e2, image.affine) # [%]
     nibabel.save(MPF, MPF_path)
@@ -172,7 +171,7 @@ def w1rms_gaussian_pulse(tm, MT_FA):
     max_gaussian = -scipy.optimize.minimize_scalar(
             lambda t: -gaussian_pulse(t,tm), bounds=(0, tm), method='bounded'
         ).fun
-    
+
     int_b1 = float(
         scipy.integrate.quad(
             lambda t: gaussian_pulse(t, tm)/max_gaussian, 0, tm, limit=150
