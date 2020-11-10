@@ -24,7 +24,7 @@ class XFL(spire.TaskFactory):
         spire.TaskFactory.__init__(self, target)
         
         if meta_data is None:
-            meta_data = re.sub(r"\.nii(\.gz)?$", ".json", source)
+            meta_data = re.sub(r"\.nii(\.gz)?$", ".json", str(source))
         
         self.file_dep = [source, meta_data]
         self.targets = [target]
@@ -34,7 +34,6 @@ class XFL(spire.TaskFactory):
     def b1_map(source_path, meta_data_path, target_path):
         image = nibabel.load(source_path)
         
-        meta_data_path = re.sub(r"\.nii(\.gz)?$", ".json", source_path)
         with open(meta_data_path) as fd:
             meta_data = json.load(fd)
         
@@ -57,7 +56,8 @@ class XFL(spire.TaskFactory):
                         (int(match.group(2), 16) <<  8))
                     break
         if csa_group is None:
-            raise Exception("CSA HEADER group not found")
+            # Default to the usual location
+            csa_group = 0x00291000
         
         series_data_element = "{:08x}".format(csa_group + 0x20)
         csa_data = dicomifier.dicom_to_nifti.siemens.parse_csa(
