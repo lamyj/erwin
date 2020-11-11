@@ -1,6 +1,7 @@
 import argparse
 import itertools
 import json
+import multiprocessing
 import re
 import sys
 
@@ -113,11 +114,13 @@ class SinglePoint(spire.TaskFactory):
             mt_pulses_info[1]["duration"], 
             numpy.radians(meta_data_array[0]["FlipAngle"][0]), 
             f0)
-        
+
+        # Clamp the MPF map in its "true" range
         f[f<0] = numpy.nan
         f[f>1] = numpy.nan
         
-        nibabel.save(nibabel.Nifti1Image(f, sources[0].affine), MPF_map_path)
+        # Save as percents
+        nibabel.save(nibabel.Nifti1Image(1e2*f, sources[0].affine), MPF_map_path)
     
     @staticmethod
     def super_lorentzian_lineshapes(T2_bound):
@@ -181,8 +184,38 @@ class SinglePoint(spire.TaskFactory):
     def estimate_f_map(
             S_ratio, R1, T2_free, delta_omega, omega_1_rms, 
             G, TR, duration, flip_angle, f0):
-        f = numpy.empty(R1.shape)
         
+        shape = S_ratio.shape
+        
+        chunk_size = int(1e4)
+        chunks_count = numpy.cumprod(shape)[-1] // chunk_size
+        
+        S_ratio = numpy.array_split(S_ratio.ravel(), chunks_count)
+        R1 = numpy.array_split(R1.ravel(), chunks_count)
+        T2_free = numpy.array_split(T2_free.ravel(), chunks_count)
+        delta_omega = numpy.array_split(delta_omega.ravel(), chunks_count)
+        omega_1_rms = numpy.array_split(omega_1_rms.ravel(), chunks_count)
+        G = numpy.array_split(G.ravel(), chunks_count)
+        
+        with multiprocessing.Pool(4) as pool:
+            f = pool.starmap(
+                SinglePoint.estimate_f_map_worker,
+                zip(
+                    S_ratio, R1, T2_free, delta_omega, omega_1_rms, G,
+                    itertools.repeat(TR, len(R1)), 
+                    itertools.repeat(duration, len(R1)), 
+                    itertools.repeat(flip_angle, len(R1)), 
+                    itertools.repeat(f0, len(R1))))
+        
+        f = numpy.concatenate(f).reshape(S_ratio.shape)
+        return f
+    
+    @staticmethod
+    def estimate_f_map_worker(
+            S_ratio, R1, T2_free, delta_omega, omega_1_rms, 
+            G, TR, duration, flip_angle, f0):
+        
+        f = numpy.empty(R1.shape)
         for index in numpy.ndindex(f.shape):
             root = scipy.optimize.fsolve(
                 mpf.model, f0, 
