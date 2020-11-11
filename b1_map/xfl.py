@@ -31,6 +31,7 @@ class XFL(spire.TaskFactory):
         
         self.actions = [(XFL.b1_map, (source, meta_data, target))]
     
+    @staticmethod
     def b1_map(source_path, meta_data_path, target_path):
         image = nibabel.load(source_path)
         
@@ -43,6 +44,7 @@ class XFL(spire.TaskFactory):
         nibabel.save(
             nibabel.Nifti1Image(fa_map/fa_prep, image.affine), target_path)
     
+    @staticmethod
     def get_fa_prep(meta_data):
         """ Return the flip angle of the preparation saturation pulse. """
         

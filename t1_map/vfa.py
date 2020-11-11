@@ -62,6 +62,7 @@ class VFA(spire.TaskFactory):
             numpy.radians(x["FlipAngle"][0]) for x in meta_data]
         flip_angle = numpy.asarray([B1_map * x for x in nominal_flip_angles])
         
+        # Compute the B1-corrected T1 map
         with numpy.errstate(divide="ignore", invalid="ignore"):
             X = signal / numpy.tan(flip_angle)
             Y = signal / numpy.sin(flip_angle)
@@ -70,13 +71,11 @@ class VFA(spire.TaskFactory):
             # Eq. 3a. The flip angles have been corrected by the B1 map, but T1'
             # still includes the effects of the RF spoiling
             T1_prime = -TR / numpy.log(SL)
-            
-        # FIXME: correction of RF-spoiling effects
+        
+        # Compute the RF-spoiling correction
         pA, pB = VFA.rf_spoiling_correction_paremeters(
             [x*rad for x in nominal_flip_angles], TE.mean()*s, TR*s)
         
-        
-        # pA, pB = estimate_preibisch_params(TR[0], numpy.degrees(FA))
         A = numpy.polyval(pA, B1_map)
         B = numpy.polyval(pB, B1_map)
         T1 = A + B*T1_prime
@@ -84,7 +83,8 @@ class VFA(spire.TaskFactory):
         T1[T1<0] = numpy.nan
         T1[T1>10] = numpy.nan
         nibabel.save(nibabel.Nifti1Image(T1, sources[0].affine), T1_map_path)
-        
+    
+    @staticmethod
     def rf_spoiling_correction_paremeters(flip_angles, TE, TR):
         """ Compute the RF-spoiling correction based on "Influence of RF 
             Spoiling on the Stability and Accuracy of T1 Mapping Based on 
@@ -138,6 +138,7 @@ class VFA(spire.TaskFactory):
         pB = numpy.polyfit(C_RF_range, B, 2)
         return pA, pB
     
+    @staticmethod
     def simulate_spgr(T1, T2, flip_angle, phase_step_increment, TE, TR):
         """ EPG simulation of the SPGR sequence.
         """
@@ -160,9 +161,10 @@ class VFA(spire.TaskFactory):
 
 def main():
     parser = argparse.ArgumentParser(description=VFA.__doc__)
-    parser.add_argument("sources", nargs=2, help="Flip angle map from the XFL")
-    parser.add_argument("B1_map", help="Flip angle map from the XFL")
-    parser.add_argument("target", help="Path to the target B1 map")
+    parser.add_argument(
+        "sources", nargs=2, help="SPGR images with different flip angles")
+    parser.add_argument("B1_map", help="B1 map in SPGR space")
+    parser.add_argument("target", help="Path to the target T1 map")
     arguments = parser.parse_args()
     
     task = VFA(**vars(arguments))
