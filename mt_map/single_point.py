@@ -4,6 +4,7 @@ import json
 import multiprocessing
 import re
 import sys
+import warnings
 
 import nibabel
 import numpy
@@ -136,9 +137,11 @@ class SinglePoint(spire.TaskFactory):
         # in doi:10.1006/jmrb.1995.1111 (and also doi:10.1002/mrm.10120 and
         # doi:10.1002/mrm.22562) as the sin θ term disappears.
         for i, offset in enumerate(frequency_offsets):
-            integral, _ = scipy.integrate.quad(
-                mpf.super_lorentzian_differential, 0, 1, (offset, T2_bound), 
-                limit=150)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                integral, _ = scipy.integrate.quad(
+                    mpf.super_lorentzian_differential, 0, 1, (offset, T2_bound), 
+                    limit=150)
             G[i] = T2_bound * numpy.sqrt(2/numpy.pi) * integral
         
         return G
@@ -207,7 +210,7 @@ class SinglePoint(spire.TaskFactory):
                     itertools.repeat(flip_angle, len(R1)), 
                     itertools.repeat(f0, len(R1))))
         
-        f = numpy.concatenate(f).reshape(S_ratio.shape)
+        f = numpy.concatenate(f).reshape(shape)
         return f
     
     @staticmethod
@@ -217,12 +220,14 @@ class SinglePoint(spire.TaskFactory):
         
         f = numpy.empty(R1.shape)
         for index in numpy.ndindex(f.shape):
-            root = scipy.optimize.fsolve(
-                mpf.model, f0, 
-                (
-                    S_ratio[index], R1[index], T2_free[index], 
-                    delta_omega[index], omega_1_rms[index], G[index], 
-                    TR, duration, flip_angle))
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                root = scipy.optimize.fsolve(
+                    mpf.model, f0, 
+                    (
+                        S_ratio[index], R1[index], T2_free[index], 
+                        delta_omega[index], omega_1_rms[index], G[index], 
+                        TR, duration, flip_angle))
             f[index] = root[0]
         
         return f
