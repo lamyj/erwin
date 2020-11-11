@@ -10,11 +10,7 @@ import nibabel
 import numpy
 import spire
 
-# FIXME: dirty hack
-if __name__ == "__main__":
-    import common
-else:
-    from . import common
+from . import common
 
 class MTR(spire.TaskFactory):
     """ Compute the MT ratio (i.e. (MT_off - MT_on) / MT_off) of two images.
@@ -67,7 +63,6 @@ class MTR(spire.TaskFactory):
         
         nibabel.save(nibabel.Nifti1Image(MTR, MT_off.affine), mtr_map_path)
 
-
 def main():
     parser = argparse.ArgumentParser(description=MTR.__doc__)
     parser.add_argument(
@@ -78,6 +73,3 @@ def main():
     
     task = MTR(**vars(arguments))
     MTR.mtr_map(task.sources, task.meta_data, *task.targets)
-
-if __name__ == "__main__":
-    sys.exit(main())

@@ -83,6 +83,3 @@ def main():
     
     task = XFL(**vars(arguments))
     XFL.b1_map(*task.file_dep, *task.targets)
-
-if __name__ == "__main__":
-    sys.exit(main())

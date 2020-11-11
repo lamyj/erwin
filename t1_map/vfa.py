@@ -169,6 +169,3 @@ def main():
     
     task = VFA(**vars(arguments))
     VFA.t1_map(task.sources, task.meta_data, task.B1_map, *task.targets)
-
-if __name__ == "__main__":
-    sys.exit(main())
