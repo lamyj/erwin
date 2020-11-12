@@ -61,6 +61,9 @@ class MTR(spire.TaskFactory):
                 MT_on_array = MT_on_array.mean(axis=-1)
             MTR = 1 - MT_on_array / MT_off_array
         
+        MTR[MTR<0] = 0
+        MTR[MTR>1] = 1
+        
         nibabel.save(nibabel.Nifti1Image(MTR, MT_off.affine), mtr_map_path)
 
 def main():
