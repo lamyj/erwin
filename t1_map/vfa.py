@@ -10,6 +10,8 @@ import spire
 import sycomore
 from sycomore.units import *
 
+from .. import entrypoint
+
 class VFA(spire.TaskFactory):
     """ Compute the T1 map based on SPGR images acquired with a VFA scheme.
         
@@ -160,12 +162,8 @@ class VFA(spire.TaskFactory):
         return numpy.abs(echo)
 
 def main():
-    parser = argparse.ArgumentParser(description=VFA.__doc__)
-    parser.add_argument(
-        "sources", nargs=2, help="SPGR images with different flip angles")
-    parser.add_argument("B1_map", help="B1 map in SPGR space")
-    parser.add_argument("target", help="Path to the target T1 map")
-    arguments = parser.parse_args()
-    
-    task = VFA(**vars(arguments))
-    VFA.t1_map(task.sources, task.meta_data, task.B1_map, *task.targets)
+    return entrypoint(
+        VFA, [
+            ("sources", {"nargs": 2, "help": "SPGR images with different flip angles"}),
+            ("B1_map", {"help": "B1 map in SPGR space"}),
+            ("target", {"help": "Path to the target T1 map"})])

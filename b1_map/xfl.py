@@ -8,6 +8,8 @@ import dicomifier
 import nibabel
 import spire
 
+from .. import entrypoint
+
 class XFL(spire.TaskFactory):
     """ Return the B1 map (as a relative factor of the true flip angle) from an
         XFL sequence. On a single Tx system, the XFL sequence generates four 
@@ -83,3 +85,10 @@ def main():
     
     task = XFL(**vars(arguments))
     XFL.b1_map(*task.file_dep, *task.targets)
+
+def main():
+    return entrypoint(
+        XFL, [
+            ("source", {"help": "Flip angle map from the XFL"}),
+            ("meta_data", {"nargs": "?", "help": "Meta-data associated with the source image"}),
+            ("target", {"help": "Path to the target B1 map"})])

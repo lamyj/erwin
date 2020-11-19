@@ -4,6 +4,8 @@ import subprocess
 
 import spire
 
+from .. import entrypoint
+
 class Preprocessing(spire.TaskFactory):
     """ Preprocess a diffusion-weighted image using MRtrix (denoising, removal 
         of Gibbs artifacts, inhomogeneity distortion correction, correction of 
@@ -36,12 +38,7 @@ class Preprocessing(spire.TaskFactory):
     ]
 
 def main():
-    parser = argparse.ArgumentParser(description=Preprocessing.__doc__)
-    parser.add_argument("source", help="Diffusion-weighted image")
-    parser.add_argument(
-        "target", help="Path to the target preprocessed DWI image")
-    arguments = parser.parse_args()
-    
-    task = Preprocessing(**vars(arguments))
-    for action in task.actions:
-        subprocess.check_call(action)
+    return entrypoint(
+        Preprocessing, [
+            ("source", {"help": "Diffusion-weighted image"}),
+            ("target", {"help": "Path to the target preprocessed DWI image"})])

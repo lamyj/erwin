@@ -12,6 +12,8 @@ import scipy.integrate
 import scipy.optimize
 import spire
 
+from .. import entrypoint
+
 from . import common
 
 import pyximport
@@ -233,16 +235,10 @@ class SinglePoint(spire.TaskFactory):
         return f
 
 def main():
-    parser = argparse.ArgumentParser(description=SinglePoint.__doc__)
-    parser.add_argument(
-        "sources", nargs=2, help="SPGR images with different flip angles")
-    parser.add_argument("B0_map", help="B0 map in SPGR space")
-    parser.add_argument("B1_map", help="B1 map in SPGR space")
-    parser.add_argument("T1_map", help="T1 map in SPGR space")
-    parser.add_argument("MPF_map", help="Path to the target MPF map")
-    arguments = parser.parse_args()
-    
-    task = SinglePoint(**vars(arguments))
-    SinglePoint.mpf_map(
-        task.sources, task.meta_data, task.B0_map, task.B1_map, task.T1_map,
-        *task.targets)
+    return entrypoint(
+        SinglePoint, [
+            ("sources", {"nargs": 2, "help": "SPGR images with different flip angles"}),
+            ("B0_map", {"help": "B0 map in SPGR space"}),
+            ("B1_map", {"help": "B1 map in SPGR space"}),
+            ("T1_map", {"help": "T1 map in SPGR space"}),
+            ("MPF_map", {"help": "Path to the target MPF map"})])

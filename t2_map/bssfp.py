@@ -10,6 +10,8 @@ import nibabel
 import numpy
 import spire
 
+from .. import entrypoint
+
 class bSSFP(spire.TaskFactory):
     """ Compute a map of T2 from bSSFP images
         
@@ -142,14 +144,9 @@ class bSSFP(spire.TaskFactory):
         return phase_increment
 
 def main():
-    parser = argparse.ArgumentParser(description=bSSFP.__doc__)
-    parser.add_argument(
-        "sources", nargs="+", help="SPGR images with different flip angles")
-    parser.add_argument("B1_map", help="B1 map in SPGR space")
-    parser.add_argument("T1_map", help="T1 map in SPGR space")
-    parser.add_argument("T2_map", help="Path to the target MPF map")
-    arguments = parser.parse_args()
-    
-    task = bSSFP(**vars(arguments))
-    bSSFP.t2_map(
-        task.sources, task.meta_data, task.B1_map, task.T1_map, *task.targets)
+    return entrypoint(
+        bSSFP, [
+            ("sources", {"nargs": "+", "help": "SPGR images with different flip angles"}),
+            ("B1_map", {"help": "B1 map in SPGR space"}),
+            ("T1_map", {"help": "T1 map in SPGR space"}),
+            ("T2_map", {"help": "Path to the target MPF map"})])

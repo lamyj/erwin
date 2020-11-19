@@ -7,6 +7,8 @@ import nibabel
 import numpy
 import spire
 
+from .. import entrypoint
+
 class DoubleEcho(spire.TaskFactory):
     """ Compute the ΔB₀ map (in Hz) using the phase difference between two 
         echoes.
@@ -62,12 +64,7 @@ class DoubleEcho(spire.TaskFactory):
             nibabel.Nifti1Image(B0_map, sources[0].affine), B0_map_path)
 
 def main():
-    parser = argparse.ArgumentParser(description=DoubleEcho.__doc__)
-    parser.add_argument(
-        "sources", nargs=2,
-        help="Double-echo SPGR images with magnitude and phase (in any order)")
-    parser.add_argument("target", help="Path to the target B0 map")
-    arguments = parser.parse_args()
-    
-    task = DoubleEcho(**vars(arguments))
-    DoubleEcho.b0_map(task.sources, task.meta_data, *task.targets)
+    return entrypoint(
+        DoubleEcho, [
+            ("sources", {"nargs": 2, "help": "Double-echo SPGR images with magnitude and phase (in any order)"}),
+            ("target", {"help": "Path to the target B0 map"})])
