@@ -24,7 +24,7 @@ class Preprocessing(spire.TaskFactory):
         # WARNING: must NOT be stored in the same file
         ["mrdegibbs", "-force", temp, temp2],
         [
-            "dwifslpreproc", "-force", "-quiet", 
+            "dwifslpreproc", "-force",
             "-scratch", "dwipreproc.tmp", "-rpe_header", 
             # WARNING: eddy complains that data is not shelled even after using
             # the "ideal" b-values (which we don't).
