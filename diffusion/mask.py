@@ -6,6 +6,7 @@ from .. import entrypoint
 
 class Mask(spire.TaskFactory):
     def __init__(self, source, target):
+        spire.TaskFactory.__init__(self, target)
         self.file_dep = [source]
         self.targets = [target]
         self.actions = [["dwi2mask", "-force", source, target]]
