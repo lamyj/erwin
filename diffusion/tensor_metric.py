@@ -10,8 +10,6 @@ class TensorMetric(spire.TaskFactory):
             self.file_dep.append(mask)
         self.targets = [target]
         
-        print(kind)
-        
         self.actions = [
             ["tensor2metric", "-force"] 
                 + (["-mask", mask] if mask else [])
