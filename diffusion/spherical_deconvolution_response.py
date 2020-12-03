@@ -2,7 +2,7 @@ import spire
 
 from .. import entrypoint
 
-class SingleFiberResponse(spire.TaskFactory):
+class SphericalDeconvolutionResponse(spire.TaskFactory):
     def __init__(self, source, prefix, mask=None):
         spire.TaskFactory.__init__(self, prefix+"*.response")
         
