@@ -21,7 +21,7 @@ class bSSFP(spire.TaskFactory):
     """
     
     def __init__(self, sources, B1_map, T1_map, T2_map, meta_data=None):
-        spire.TaskFactory.__init__(self, T2_map)
+        spire.TaskFactory.__init__(self, str(T2_map))
         
         self.sources = sources
         

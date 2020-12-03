@@ -21,7 +21,7 @@ class VFA(spire.TaskFactory):
     """
     
     def __init__(self, sources, B1_map, target, meta_data=None):
-        spire.TaskFactory.__init__(self, target)
+        spire.TaskFactory.__init__(self, str(target))
         
         self.sources = sources
         

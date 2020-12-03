@@ -6,7 +6,7 @@ class Tensor(spire.TaskFactory):
     def __init__(
             self, source, target, 
             mask=None, dkt=None, ols=False, iter=None, b0=None):
-        spire.TaskFactory.__init__(self, target)
+        spire.TaskFactory.__init__(self, str(target))
         self.file_dep = [source]
         if mask is not None:
             self.file_dep.append(mask)

@@ -14,7 +14,7 @@ class Preprocessing(spire.TaskFactory):
     """
     
     def __init__(self, source, target):
-        spire.TaskFactory.__init__(self, target)
+        spire.TaskFactory.__init__(self, str(target))
         
         temp = "__{}_temp.mif".format(os.path.basename(target))
         temp2 = "__{}_temp2.mif".format(os.path.basename(target))

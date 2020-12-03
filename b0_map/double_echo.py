@@ -19,7 +19,7 @@ class DoubleEcho(spire.TaskFactory):
     """
     
     def __init__(self, sources, target):
-        spire.TaskFactory.__init__(self, target)
+        spire.TaskFactory.__init__(self, str(target))
         
         self.sources = sources
         self.meta_data = [

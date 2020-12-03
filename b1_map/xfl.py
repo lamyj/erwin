@@ -23,7 +23,7 @@ class XFL(spire.TaskFactory):
     """
     
     def __init__(self, source, target, meta_data=None):
-        spire.TaskFactory.__init__(self, target)
+        spire.TaskFactory.__init__(self, str(target))
         
         if meta_data is None:
             meta_data = re.sub(r"\.nii(\.gz)?$", ".json", str(source))

@@ -4,7 +4,7 @@ from .. import entrypoint
 
 class TensorMetric(spire.TaskFactory):
     def __init__(self, source, kind, target, mask=None):
-        spire.TaskFactory.__init__(self, target)
+        spire.TaskFactory.__init__(self, str(target))
         self.file_dep = [source]
         if mask is not None:
             self.file_dep.append(mask)
