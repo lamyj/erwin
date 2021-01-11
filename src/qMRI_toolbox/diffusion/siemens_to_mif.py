@@ -5,6 +5,7 @@ import re
 import struct
 
 import dicomifier
+import numpy
 import spire
 
 class SiemensToMIF(spire.TaskFactory):
