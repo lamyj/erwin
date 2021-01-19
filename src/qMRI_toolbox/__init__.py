@@ -14,4 +14,6 @@ def entrypoint(class_, arguments):
         elif isinstance(action, tuple):
             action[0](*action[1])
 
-from . import b0_map, b1_map, cbf, diffusion, misc, moco, mt_map, t1_map, t2_map
+from . import (
+    b0_map, b1_map, cbf, diffusion, misc, moco, mt_map, qsm, t1_map, t2_map
+)
