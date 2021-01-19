@@ -42,7 +42,7 @@ setuptools.setup(
     keywords = [
         "MRI", "quantitative", 
         "field mapping", "B0", "B1",
-        "CBF", "cerebral blood flow", "ASL", "arterial spin labeling", "pASL"
+        "CBF", "cerebral blood flow", "ASL", "arterial spin labeling", "pASL",
         "diffusion", "DTI", "diffusion tensor", "spherical harmonics",
         "MT", "magnetization transfer",
         "relaxometry", "T1", "VFA", "T2", "bSSFP",
@@ -57,7 +57,8 @@ setuptools.setup(
     setup_requires=["setuptools_scm"],
     use_scm_version=True,
     
-    # FIXME: dicomifier, sycomore
+    # FIXME: dicomifier
     install_requires=[
-        "cython", "doit", "numpy", "scipy", "spire-pipeline>=1.1.1"],
+        "cython", "doit", "numpy", "scipy", "spire-pipeline>=1.1.1",
+        "sycomore"],
 )
