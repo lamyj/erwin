@@ -31,15 +31,19 @@ class UnwrapPhase(spire.TaskFactory):
     
     @staticmethod
     def unwrap_phase(source_path, meta_data_path, padding, target_path):
-        with open(meta_data_path) as fd:
-            meta_data = json.load(fd)
+        try:
+            with open(meta_data_path) as fd:
+                meta_data = json.load(fd)
+        except FileNotFoundError:
+            meta_data = None
         
         phi_w_image = nibabel.load(source_path)
         phi_w = phi_w_image.get_fdata()
         
         # Siemens phase images are mapping [-π, +π[ to [-4096, +4094]
         if (
-                meta_data["ImageType"][2] == "P" 
+                meta_data is not None
+                and meta_data["ImageType"][2] == "P" 
                 and meta_data["Manufacturer"][0] == "SIEMENS"):
             phi_w *= numpy.pi / 4096
         
