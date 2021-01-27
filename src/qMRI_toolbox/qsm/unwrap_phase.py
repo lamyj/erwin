@@ -52,7 +52,7 @@ class UnwrapPhase(spire.TaskFactory):
         ifft = lambda x: scipy.fft.ifftn(x, workers=4)
         
         # Pad on all spatial dimensions
-        phi_w = numpy.pad(phi_w, 3*[2*[padding]]+[[0,0]])
+        phi_w = numpy.pad(phi_w, 3*[2*[padding]]+[[0,0]], mode="constant")
         
         # Compute the k-space coordinates and their norm
         k = numpy.array(
