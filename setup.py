@@ -50,7 +50,10 @@ setuptools.setup(
     
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
-    ext_modules=Cython.Build.cythonize("src/qMRI_toolbox/mt_map/mpf.pyx"),
+    ext_modules=Cython.Build.cythonize([
+        setuptools.Extension(
+            "qMRI_toolbox.mt_map.mpf", ["src/qMRI_toolbox/mt_map/mpf.pyx"])
+    ]),
     
     python_requires=">=3.5.*,",
     
@@ -59,6 +62,6 @@ setuptools.setup(
     
     # FIXME: dicomifier
     install_requires=[
-        "cython", "doit", "numpy", "scipy", "spire-pipeline>=1.1.1",
-        "sycomore"],
+        "cython", "doit", "meg", "nibabel", "numpy", "scipy",
+        "spire-pipeline>=1.1.1", "sycomore"],
 )
