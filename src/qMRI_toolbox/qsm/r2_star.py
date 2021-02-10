@@ -16,10 +16,8 @@ class R2Star(spire.TaskFactory):
         Magnetic Resonance in Medicine 73(2). 2015.
     """
     
-    def __init__(self, source, target, medi_toolbox_path, meta_data=None):
-        spire.TaskFactory.__init__(self, target)
-        
-        self.sources = [source]
+    def __init__(self, source, target, medi_toolbox, meta_data=None):
+        spire.TaskFactory.__init__(self, str(target))
         
         if meta_data is None:
             meta_data = re.sub(r"\.nii(\.gz)?$", ".json", str(source))
@@ -28,28 +26,24 @@ class R2Star(spire.TaskFactory):
         self.targets = [target]
         
         self.actions = [
-            (R2Star.arlo, (source, meta_data, medi_toolbox_path, target))]
+            (R2Star.arlo, (source, meta_data, medi_toolbox, target))]
     
     @staticmethod
     def arlo(source_path, meta_data_path, medi_toolbox_path, target_path):
-        magnitude_image = nibabel.load(source_path)
+        source = nibabel.load(source_path)
         
-        try:
-            with open(meta_data_path) as fd:
-                meta_data = json.load(fd)
-        except FileNotFoundError:
-            meta_data = None
-        echo_times = numpy.array([x[0]*1e-3 for x in meta_data["EchoTime"]])
+        with open(meta_data_path) as fd:
+            meta_data = json.load(fd)
+        echo_times = [x[0]*1e-3 for x in meta_data["EchoTime"]]
         
         with meg.Engine() as engine:
             engine(f"run('{medi_toolbox_path}/MEDI_set_path.m');")
             engine["echo_times"] = echo_times
-            engine["magnitude"] = magnitude_image.get_fdata()
+            engine["magnitude"] = source.get_fdata()
             engine("R2_star = arlo(echo_times, magnitude);")
             R2_star = engine["R2_star"]
         
-        nibabel.save(
-            nibabel.Nifti1Image(R2_star, magnitude_image.affine), target_path)
+        nibabel.save(nibabel.Nifti1Image(R2_star, source.affine), target_path)
 
 def main():
     return entrypoint(
