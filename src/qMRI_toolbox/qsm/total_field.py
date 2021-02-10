@@ -13,14 +13,13 @@ class TotalField(spire.TaskFactory):
     """
     
     def __init__(self, magnitude, phase, target, medi_toolbox, phase_meta_data=None):
-        spire.TaskFactory.__init__(self, target)
+        spire.TaskFactory.__init__(self, str(target))
         
         if phase_meta_data is None:
             phase_meta_data = re.sub(r"\.nii(\.gz)?$", ".json", str(phase))
         
         self.file_dep = [magnitude, phase, phase_meta_data]
         self.targets = [target]
-        
         
         self.actions = [
             (

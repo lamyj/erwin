@@ -13,7 +13,7 @@ class BackgroundFieldRemoval(spire.TaskFactory):
     """
     
     def __init__(self, f_total, mask, target, medi_toolbox, ):
-        spire.TaskFactory.__init__(self, target)
+        spire.TaskFactory.__init__(self, str(target))
         
         self.file_dep = [f_total, mask]
         self.targets = [target]
