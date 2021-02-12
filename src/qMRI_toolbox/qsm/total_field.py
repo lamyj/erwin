@@ -12,23 +12,28 @@ class TotalField(spire.TaskFactory):
     """ Compute the unwrapped total susceptibility field
     """
     
-    def __init__(self, magnitude, phase, target, medi_toolbox, phase_meta_data=None):
-        spire.TaskFactory.__init__(self, str(target))
+    def __init__(
+            self, magnitude, phase, f_total, medi_toolbox, 
+            phase_meta_data=None, sd_noise=None):
+        spire.TaskFactory.__init__(self, str(f_total))
         
         if phase_meta_data is None:
             phase_meta_data = re.sub(r"\.nii(\.gz)?$", ".json", str(phase))
         
         self.file_dep = [magnitude, phase, phase_meta_data]
-        self.targets = [target]
+        self.targets = [f_total]
+        if sd_noise is not None:
+            self.targets.append(sd_noise)
         
         self.actions = [
             (
-                TotalField.total_field, 
-                (magnitude, phase, phase_meta_data, medi_toolbox, target))]
+                TotalField.total_field, (
+                    magnitude, phase, phase_meta_data, medi_toolbox, 
+                    f_total, sd_noise))]
     
     def total_field(
             magnitude_path, phase_path, phase_meta_data_path, 
-            medi_toolbox_path, target_path):
+            medi_toolbox_path, f_total_path, sd_noise_path):
         magnitude_image = nibabel.load(magnitude_path)
         phase_image = nibabel.load(phase_path)
         
@@ -61,16 +66,22 @@ class TotalField(spire.TaskFactory):
             engine("magnitude = sqrt(sum(abs(signal).^2, 4));")
             engine("f_total = unwrapPhase(magnitude, f_total_wrapped, shape);")
             f_total = engine["f_total"]
+            sd_noise = engine["sd_noise"]
         
         nibabel.save(
-            nibabel.Nifti1Image(f_total, magnitude_image.affine), target_path)
+            nibabel.Nifti1Image(f_total, magnitude_image.affine), f_total_path)
+        if sd_noise_path is not None:
+            nibabel.save(
+                nibabel.Nifti1Image(sd_noise, magnitude_image.affine), 
+                sd_noise_path)
 
 def main():
     return entrypoint(
         TotalField, [
             ("magnitude", {"help": "Multi-echo magnitude image"}),
             ("phase", {"help": "Multi-echo phase image"}),
-            ("target", {"help": "Total field image"}),
+            ("f_total", {"help": "Total field image"}),
+            ("sd_noise", {"nargs": "?", "help": "Total field image"}),
             (
                 "--medi", {
                     "required": True, 
