@@ -1,19 +1,17 @@
-import io
 import os
-import subprocess
 
 import amico
-import numpy
 import spire
 
 from .. import entrypoint
+from .noddi import NODDI
 
 class NODDIResponses(spire.TaskFactory):
     def __init__(
-            self, scheme, response_directory, 
+            self, dwi, response_directory, 
             shell_width=0, b0_threshold=0, lmax=12, ndirs=32761):
         spire.TaskFactory.__init__(self, str(response_directory))
-        self.file_dep = [scheme]
+        self.file_dep = [dwi]
         
         model = amico.models.NODDI()
         self.targets = [
@@ -23,22 +21,17 @@ class NODDIResponses(spire.TaskFactory):
             ["mkdir", "-p", response_directory],
             (
                 NODDIResponses.responses, 
-                (scheme, response_directory, shell_width, b0_threshold, lmax, ndirs))
+                (dwi, response_directory, shell_width, b0_threshold, lmax, ndirs))
         ]
     
     @staticmethod
     def responses(
             dwi, response_directory, 
             shell_width=0, b0_threshold=0, lmax=12, ndirs=32761):
+        
         amico.core.setup(lmax, ndirs)
         
-        scheme = subprocess.check_output(["mrinfo", "-dwgrad", dwi])
-        # NOTE Amico expects x,y,z (which frame?), b-value (s/mm^2)
-        scheme = numpy.loadtxt(io.BytesIO(scheme))
-        # NOTE Amico expects shelled data
-        if shell_width != 0:
-            scheme[:,3] = numpy.round(scheme[:,3]/shell_width)*shell_width
-        scheme = amico.scheme.Scheme(scheme, b0_threshold)
+        scheme = NODDI.amico_scheme(dwi, shell_width, b0_threshold)
         
         rotation_matrices = amico.lut.load_precomputed_rotation_matrices(
             lmax, ndirs)
