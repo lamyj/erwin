@@ -60,8 +60,8 @@ setuptools.setup(
     setup_requires=["setuptools_scm"],
     use_scm_version=True,
     
-    # FIXME: dicomifier
+    # FIXME: dicomifier, MEDI toolbox
     install_requires=[
-        "cython", "doit", "meg", "nibabel", "numpy", "scipy",
+        "cython", "dmri-amico", "doit", "meg", "nibabel", "numpy", "scipy",
         "spire-pipeline>=1.1.1", "sycomore"],
 )
