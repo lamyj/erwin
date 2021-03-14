@@ -29,7 +29,7 @@ class SinglePoint(spire.TaskFactory):
     """
     
     def __init__(self, sources, B0_map, B1_map, T1_map, MPF_map, meta_data=None):
-        spire.TaskFactory.__init__(self, MPF_map)
+        spire.TaskFactory.__init__(self, str(MPF_map))
         
         self.sources = sources
         

@@ -19,7 +19,7 @@ class MTR(spire.TaskFactory):
     """
     
     def __init__(self, sources, target, meta_data=None):
-        spire.TaskFactory.__init__(self, target)
+        spire.TaskFactory.__init__(self, str(target))
         
         self.sources = sources
         
