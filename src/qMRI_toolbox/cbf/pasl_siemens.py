@@ -9,7 +9,7 @@ import nibabel
 import numpy
 import spire
 
-from .. import entrypoint
+from .. import entrypoint, misc
 
 class pASLSiemens(spire.TaskFactory):
     """ Compute the CBF based on a pASL from Siemens.
@@ -43,11 +43,12 @@ class pASLSiemens(spire.TaskFactory):
         
         slice_time = nibabel.load(slice_time_path)
         
+        csa_group = misc.siemens_csa.find_csa_group(meta_data) or 0x00291000
+        csa = dicomifier.dicom_to_nifti.siemens.parse_csa(
+            base64.b64decode(meta_data["{:08x}".format(csa_group+0x20)][0]))
+        protocol = csa["MrPhoenixProtocol"][0]
         ascconv = re.search(
-            b"### ASCCONV BEGIN ###\s+(.+)\s+### ASCCONV END ###", 
-            dicomifier.dicom_to_nifti.siemens.parse_csa(
-                    base64.b64decode(meta_data["00291020"][0])
-                )["MrPhoenixProtocol"][0], 
+            b"### ASCCONV BEGIN ###\s+(.+)\s+### ASCCONV END ###", protocol, 
             flags=re.DOTALL).group(1).decode()
 
         # Blood/tissue water partition coefficient, in L/kg

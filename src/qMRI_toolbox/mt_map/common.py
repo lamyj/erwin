@@ -4,8 +4,10 @@ import re
 import dicomifier
 import numpy
 
+from .. import misc
+
 def get_pulses(meta_data):
-    csa_group = find_csa_group(meta_data) or 0x00291000
+    csa_group = misc.siemens_csa.find_csa_group(meta_data) or 0x00291000
     csa = dicomifier.dicom_to_nifti.siemens.parse_csa(
         base64.b64decode(meta_data["{:08x}".format(csa_group+0x20)][0]))
     protocol = csa["MrPhoenixProtocol"][0]
@@ -19,7 +21,7 @@ def get_pulses(meta_data):
 def get_mt_pulse_info(meta_data):
     """ Read the MT pulse informations from the private data. """    
     
-    csa_group = find_csa_group(meta_data) or 0x00291000
+    csa_group = misc.siemens_csa.find_csa_group(meta_data) or 0x00291000
     csa = dicomifier.dicom_to_nifti.siemens.parse_csa(
         base64.b64decode(meta_data["{:08x}".format(csa_group+0x20)][0]))
     protocol = csa["MrPhoenixProtocol"][0]
@@ -40,22 +42,3 @@ def get_mt_pulse_info(meta_data):
     pulse_info["duration"] *= 1e-6
     
     return pulse_info
-
-def find_csa_group(meta_data):
-    csa_group = None
-    for key, value in meta_data.items():
-        match = re.match(r"(0029)00(\d\d)", key)
-        if match:
-            creator = b"SIEMENS CSA HEADER"
-            is_siemens = (value[0] == creator)
-            if not is_siemens:
-                try:
-                    is_siemens = base64.b64decode(value[0]) == creator
-                except:
-                    is_siemens = False
-            if is_siemens:
-                csa_group = (
-                    (int(match.group(1), 16) << 16) + 
-                    (int(match.group(2), 16) <<  8))
-                break
-    return csa_group

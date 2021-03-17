@@ -8,7 +8,7 @@ import dicomifier
 import nibabel
 import spire
 
-from .. import entrypoint
+from .. import entrypoint, misc
 
 class XFL(spire.TaskFactory):
     """ Return the B1 map (as a relative factor of the true flip angle) from an
@@ -50,23 +50,10 @@ class XFL(spire.TaskFactory):
     def get_fa_prep(meta_data):
         """ Return the flip angle of the preparation saturation pulse. """
         
-        csa_group = None
-        for key, value in meta_data.items():
-            match = re.match(r"(0029)00(\d\d)", key)
-            if match:
-                if base64.b64decode(value[0]) == b"SIEMENS CSA HEADER":
-                    csa_group = (
-                        (int(match.group(1), 16) << 16) + 
-                        (int(match.group(2), 16) <<  8))
-                    break
-        if csa_group is None:
-            # Default to the usual location
-            csa_group = 0x00291000
-        
-        series_data_element = "{:08x}".format(csa_group + 0x20)
-        csa_data = dicomifier.dicom_to_nifti.siemens.parse_csa(
-            base64.b64decode(meta_data[series_data_element][0]))
-        protocol = csa_data["MrPhoenixProtocol"][0]
+        csa_group = misc.siemens_csa.find_csa_group(meta_data) or 0x00291000
+        csa = dicomifier.dicom_to_nifti.siemens.parse_csa(
+            base64.b64decode(meta_data["{:08x}".format(csa_group+0x20)][0]))
+        protocol = csa["MrPhoenixProtocol"][0]
         fa_prep = float(
             re.search(
                     br"sWiPMemBlock.adFree\[0\]\s*=\s*(\S+)$", protocol, re.M
