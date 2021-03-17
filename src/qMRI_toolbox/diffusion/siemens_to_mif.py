@@ -19,7 +19,7 @@ class SiemensToMIF(spire.TaskFactory):
         diffusion_scheme_path = target.parent/"__{}.diff".format(target.name)
         phase_encoding_scheme_path = target.parent/"__{}.pe".format(target.name)
     
-        self.file_dep = itertools.chain(sources, meta_data)
+        self.file_dep = list(itertools.chain(sources, meta_data))
         self.targets = [target]
         self.actions = [
             ["mrcat", "-force", "-quiet"] + sources + [temp],
