@@ -2,6 +2,8 @@ import nibabel
 import numpy
 import spire
 
+from .. import entrypoint
+
 class TimeToRate(spire.TaskFactory):
     """ Convert a relaxation time to a relaxation rate.
     """
@@ -21,3 +23,13 @@ class TimeToRate(spire.TaskFactory):
             rate_array = numpy.clip(rate_array, *range)
         nibabel.save(
             nibabel.Nifti1Image(rate_array, time_image.affine), destination)
+
+def main():
+    return entrypoint(
+        TimeToRate, [
+            ("source", {"help": "Source time map"}),
+            ("destination", {"help": "Target rate map"}),
+            (
+                "--range", {
+                    "help": "Clip range",
+                    "type": lambda x: [float(y) for y in x.split(",")]})])
