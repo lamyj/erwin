@@ -7,7 +7,7 @@ import nibabel
 import numpy
 import spire
 
-from .. import entrypoint
+from .. import entrypoint, misc
 
 class SliceTimeSiemens(spire.TaskFactory):
     """ Create a slice-time image from Siemens private data.
@@ -30,9 +30,12 @@ class SliceTimeSiemens(spire.TaskFactory):
         with open(meta_data_path) as fd:
             meta_data = json.load(fd)
         
+        siemens_mr_header = misc.siemens_csa.find_private_group(
+            meta_data, "SIEMENS MR HEADER", 0x0019)
+        mosaic_ref_acq_times = meta_data["{:08x}".format(siemens_mr_header+0x29)]
         slice_times = 1e-3 * numpy.asarray([
             struct.unpack("{}d".format(source.shape[2]), base64.b64decode(x[0])) 
-            for x in meta_data["00191029"]]).T
+            for x in mosaic_ref_acq_times]).T
         slice_times_array = numpy.tile(slice_times, source.shape[:2]+(1, 1))
         
         nibabel.save(
