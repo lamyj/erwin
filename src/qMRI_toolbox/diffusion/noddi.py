@@ -10,7 +10,13 @@ from .. import entrypoint
 from . import mif_io
 
 class NODDI(spire.TaskFactory):
-    """ https://doi.org/10.1016/j.neuroimage.2012.03.072
+    """ Fit the NODDI model using AMICO.
+        
+        References:
+        - NODDI: Practical in vivo neurite orientation dispersion and density 
+          imaging of the human brain. Zhang et al. NeuroImage 61(4). 2012.
+        - Accelerated Microstructure Imaging via Convex Optimization (AMICO) 
+          from diffusion MRI data. Daducci et al. NeuroImage 105. 2015.
     """
     
     def __init__(

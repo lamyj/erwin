@@ -1,6 +1,10 @@
 import spire
 
 class MeanResponse(spire.TaskFactory):
+    """ Calculate the mean response function from a set of text files 
+        (responsemean from MRtrix3).
+    """
+    
     def __init__(self, sources, target):
         spire.TaskFactory.__init__(self, str(target))
         

@@ -16,15 +16,13 @@ class Preprocessing(spire.TaskFactory):
     def __init__(self, source, target):
         spire.TaskFactory.__init__(self, str(target))
         
-        temp = os.path.join(
-            os.path.dirname(target), 
-            "__{}_temp.mif".format(os.path.basename(target)))
-        temp2 = os.path.join(
-            os.path.dirname(target), 
-            "__{}_temp2.mif".format(os.path.basename(target)))
+        target_dir = os.path.dirname(target)
+        target_base = os.path.basename(target)
+        
+        temp = os.path.join(target_dir, "__{}_temp.mif".format(target_base))
+        temp2 = os.path.join(target_dir, "__{}_temp2.mif".format(target_base))
         temp_dir = os.path.join(
-            os.path.dirname(target), 
-            "__{}_dwipreproc.tmp".format(os.path.basename(target)))
+            target_dir, "__{}_dwipreproc.tmp".format(target_base))
         
         self.file_dep = [source]
         self.targets = [target]

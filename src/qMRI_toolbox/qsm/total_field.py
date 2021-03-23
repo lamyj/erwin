@@ -9,7 +9,8 @@ import spire
 from .. import entrypoint
 
 class TotalField(spire.TaskFactory):
-    """ Compute the unwrapped total susceptibility field
+    """ Compute the unwrapped total susceptibility field using the PDF and
+        region-growing phase unwrapping of the MEDI toolbox.
     """
     
     def __init__(

@@ -1,4 +1,3 @@
-import argparse
 import itertools
 import json
 import re
@@ -66,5 +65,9 @@ class DoubleEcho(spire.TaskFactory):
 def main():
     return entrypoint(
         DoubleEcho, [
-            ("sources", {"nargs": 2, "help": "Double-echo SPGR images with magnitude and phase (in any order)"}),
-            ("target", {"help": "Path to the target B0 map"})])
+            (
+                "sources", {
+                    "nargs": 2, 
+                    "help": ("Double-echo SPGR images with magnitude and "
+                        "phase (in any order)")}),
+            ("target", {"help": "Path to the target ΔB₀ map"})])

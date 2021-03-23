@@ -3,6 +3,10 @@ import spire
 from .. import entrypoint
 
 class SphericalDeconvolutionResponse(spire.TaskFactory):
+    """ Unsupervised estimation of WM, GM and CSF response functions that does
+        not require a T1 image. (dwi2response dhollander from MRtrix3).
+    """
+    
     def __init__(self, source, prefix, mask=None):
         spire.TaskFactory.__init__(self, prefix+"*.response")
         
@@ -21,7 +25,7 @@ class SphericalDeconvolutionResponse(spire.TaskFactory):
 
 def main():
     return entrypoint(
-        SingleFiberResponse, [
+        SphericalDeconvolutionResponse, [
             ("source", {"help": "Source DWI image"}),
             ("prefix", {"help": "Prefix of the target response files"}),
             ("--mask", {"help": "Binary mask"})])

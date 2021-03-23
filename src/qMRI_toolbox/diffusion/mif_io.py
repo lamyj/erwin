@@ -6,6 +6,10 @@ import numpy
 import nibabel
 
 def read(path_or_fd):
+    """ Read a MIF-format file from a filesystem path or an opened file 
+        descriptor.
+    """
+    
     if hasattr(path_or_fd, "read"):
         path = getattr(path_or_fd, "name", None)
         fd = path_or_fd
@@ -40,6 +44,9 @@ def read(path_or_fd):
     return image, header
 
 def read_header(fd):
+    """ Return a dictionary of fields from a MIF header.
+    """
+    
     magic = fd.readline().strip()
     if magic != b"mrtrix image":
         raise Exception("Invalid file")
@@ -91,12 +98,18 @@ def read_buffer(header, fd):
     return buffer
 
 def get_affine(header):
+    """ Return the affine matrix contained in a MIF header.
+    """
+    
     transform = header[b"transform"]
     vox = header[b"vox"]
     affine = numpy.vstack([numpy.array(transform), [0,0,0,1]]) @ numpy.diag(vox)
     return affine
 
 def get_dtype(header):
+    """ Return the numpy dtype matching the MIF header.
+    """
+    
     data_type = header[b"datatype"].lower()
     data_type_regex = re.compile(br"^(bit|int|uint|float|cfloat)(\d+)?(le|be)?$")
     kind, width_bits, endianness = re.match(data_type_regex, data_type).groups()

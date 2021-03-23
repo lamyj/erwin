@@ -5,6 +5,9 @@ import spire
 from .. import entrypoint
 
 class VentriclesMask(spire.TaskFactory):
+    """ Compute a mas of the ventricles using the MEDI toolbox.
+    """
+    
     def __init__(self, r2_star, mask, target, medi_toolbox):
         spire.TaskFactory.__init__(self, str(target))
         self.file_dep = [r2_star, mask]

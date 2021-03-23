@@ -5,6 +5,8 @@ import spire
 from .. import entrypoint
 
 class Mask(spire.TaskFactory):
+    """ Generates a whole brain mask from a DWI image (dwi2mask from MRtrix3).
+    """ 
     def __init__(self, source, target):
         spire.TaskFactory.__init__(self, str(target))
         self.file_dep = [source]

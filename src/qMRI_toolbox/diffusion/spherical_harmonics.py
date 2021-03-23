@@ -5,6 +5,9 @@ import spire
 from .. import entrypoint
 
 class SphericalHarmonics(spire.TaskFactory):
+    """ Perform multi-shell multi-tissue CSD (dwi2fod msmt_csd from MRtrix3).
+    """
+    
     def __init__(
             self, source, global_response, prefix, 
             mask=None):
@@ -25,13 +28,9 @@ class SphericalHarmonics(spire.TaskFactory):
             #     +list(itertools.chain(*zip(sh, sh))
         ]
 
-# def main():
-#     return entrypoint(
-#         Tensor, [
-#             ("source", {"help": "Source DWI image"}),
-#             ("target", {"help": "Target diffusion tensor image"}),
-#             ("--mask", {"help": "Binary mask"}),
-#             ("--dkt", {"help": "Target diffusion kurtosis image"}),
-#             ("--ols", {"action": "store_true", "help": "Perform initial fit with OLS"}),
-#             ("--iter", {"help": "Number of iterative reweightings"}),
-#             ("--b0", {"help": "Target estimated b=0 s/mm² image"})])
+def main():
+    return entrypoint(
+        SphericalHarmonics, [
+            ("source", {"help": "Source DWI image"}),
+            ("global_response", {"help": "Single-fiber response files"}),
+            ("prefix", {"help": "Prefix of the target harmonics files"})])

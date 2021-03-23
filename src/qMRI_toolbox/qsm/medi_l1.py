@@ -10,6 +10,14 @@ import spire
 from .. import entrypoint
 
 class MediL1(spire.TaskFactory):
+    """ Compute the QSM using the MEDI+0 method of the MEDI toolbox.
+        
+        Reference: MEDI+0: Morphology enabled dipole inversion with automatic 
+        uniform cerebrospinal fluid zero reference for quantitative 
+        susceptibility mapping. Liu et al. Magnetic Resonance in Medicine 79(5).
+        2018
+    """
+    
     def __init__(
             self, magnitude, total_field, sd_noise, object_field, brain, 
             ventricles, target, medi_toolbox, meta_data=None):

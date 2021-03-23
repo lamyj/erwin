@@ -6,7 +6,12 @@ import tempfile
 
 import spire
 
+from .. import entrypoint
+
 class BET(spire.TaskFactory):
+    """ Brain extration using BET from FSL.
+    """
+    
     def __init__(
             self, source, target, 
             mask=None, skull=None, brain=True,
@@ -103,3 +108,41 @@ class BET(spire.TaskFactory):
                     skull)
             if brain_mesh is not None:
                 shutil.copy(temp_dir/"bet_mesh.vtk", brain_mesh)
+
+def main():
+    return entrypoint(
+        BET, [
+            ("source", {"help": "Source image"}),
+            ("target", {"help": "Target brain image"}),
+            ("--mask", {"help": "Target brain mask"}),
+            ("--skull", {"help": "Target skull mask"}),
+            (
+                "--no-brain", {
+                    "action": "store_false", "dest": "brain",
+                    "help": "Don't store the brain image"}),
+            (
+                "--threshold", {
+                    "help": "Fractional intensity threshold", "type": float, 
+                    "dest": "fractional_intensity_threshold"}),
+            (
+                "--gradient", {
+                    "help": "Vertical gradient", "type": float, 
+                    "dest": "vertical_gradient"}),
+            ("--radius", {"help": "Initial radius (mm)", "type": float}),
+            (
+                "--cog", {
+                    "help": "Center of gravity (voxels, as 'x,y,z')", 
+                    "type": lambda x: [float(x) for x in x.split(",")],
+                    "dest": "center_of_gravity"}),
+            (
+                "--thresholding", {
+                    "help": "Apply thresholding to segmented brain image and mask",
+                    "action": "store_true"}),
+            ("--mesh", {"help": "Target brain mesh", "dest": "brain_mesh"}),
+            (
+                "--variant", {
+                    "help": "Variations on default bet2 functionality", 
+                    "choices": [
+                        "robust", "optic", "neck", "small_fov", "fmri", 
+                        "additionnal_surfaces"]})
+            ])

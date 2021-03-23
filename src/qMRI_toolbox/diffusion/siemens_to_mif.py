@@ -1,6 +1,7 @@
 import base64
 import itertools
 import json
+import os
 import re
 import struct
 
@@ -8,16 +9,26 @@ import dicomifier
 import numpy
 import spire
 
+from .. import entrypoint
+
 class SiemensToMIF(spire.TaskFactory):
+    """ Convert DWI data from Siemens to MIF format.
+    """
+    
     def __init__(self, sources, target):
         spire.TaskFactory.__init__(self, str(target))
     
         meta_data = [
             re.sub(r"\.nii(\.gz)?$", ".json", str(x)) for x in sources]
-    
-        temp = target.parent/"__{}_temp.mif".format(target.name)
-        diffusion_scheme_path = target.parent/"__{}.diff".format(target.name)
-        phase_encoding_scheme_path = target.parent/"__{}.pe".format(target.name)
+        
+        target_dir = os.path.dirname(target)
+        target_base = os.path.basename(target)
+        
+        temp = os.path.join(target_dir, "__{}_temp.mif".format(target_base))
+        diffusion_scheme_path = os.path.join(
+            target_dir, "__{}.diff".format(target_base))
+        phase_encoding_scheme_path = os.path.join(
+            target_dir, "__{}.pe".format(target_base))
     
         self.file_dep = list(itertools.chain(sources, meta_data))
         self.targets = [target]
@@ -92,3 +103,12 @@ class SiemensToMIF(spire.TaskFactory):
         scheme[:, -1] = readout_time
 
         numpy.savetxt(str(scheme_path), scheme)
+
+def main():
+    return entrypoint(
+        SiemensToMIF, [
+            (
+                "sources", {
+                    "nargs": "+", "metavar": "source", 
+                    "help": "Diffusion-weighted image"}),
+            ("target", {"help": "Path to the target DWI image in MIF format"})])

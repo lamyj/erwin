@@ -1,6 +1,3 @@
-import json
-import re
-
 import meg
 import nibabel
 import numpy
@@ -9,7 +6,10 @@ import spire
 from .. import entrypoint
 
 class BackgroundFieldRemoval(spire.TaskFactory):
-    """ Remove the background field
+    """ Remove the background field using the LBV method of the MEDI toolbox.
+        
+        Reference: Background field removal by solving the Laplacian boundary
+        value problem. Zhou et al. NMR in Biomedicine 27(3). 2014.
     """
     
     def __init__(self, f_total, mask, target, medi_toolbox, ):

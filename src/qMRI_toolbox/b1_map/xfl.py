@@ -1,8 +1,6 @@
-import argparse
 import base64
 import json
 import re
-import sys
 
 import dicomifier
 import nibabel
@@ -14,8 +12,7 @@ class XFL(spire.TaskFactory):
     """ Return the B1 map (as a relative factor of the true flip angle) from an
         XFL sequence. On a single Tx system, the XFL sequence generates four 
         volumes; this class expects the flip angle map as input, usually called
-        "B1_Ampli", and expects that the meta-data has been converted by 
-        Dicomifier.
+        "B1_Ampli".
         
         Reference: Amadon, et al. B1 Mapping of an 8-Channel TX-Array Over a 
         Human-Head-Like Volume in Less Than 2 Minutes: The XEP Sequence. 
@@ -62,20 +59,11 @@ class XFL(spire.TaskFactory):
         return fa_prep
 
 def main():
-    parser = argparse.ArgumentParser(description=XFL.__doc__)
-    parser.add_argument("source", help="Flip angle map from the XFL")
-    parser.add_argument(
-        "meta_data", nargs="?", 
-        help="Meta-data associated with the source image")
-    parser.add_argument("target", help="Path to the target B1 map")
-    arguments = parser.parse_args()
-    
-    task = XFL(**vars(arguments))
-    XFL.b1_map(*task.file_dep, *task.targets)
-
-def main():
     return entrypoint(
         XFL, [
             ("source", {"help": "Flip angle map from the XFL"}),
-            ("meta_data", {"nargs": "?", "help": "Meta-data associated with the source image"}),
+            (
+                "meta_data", {
+                    "nargs": "?", 
+                    "help": "Meta-data associated with the source image"}),
             ("target", {"help": "Path to the target B1 map"})])
