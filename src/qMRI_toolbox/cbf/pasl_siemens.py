@@ -24,11 +24,11 @@ class pASLSiemens(spire.TaskFactory):
     def __init__(self, source, meta_data, slice_time, target):
         spire.TaskFactory.__init__(self, str(target))
         
-        self.file_dep = [source]
-        self.targets = [target]
-        
         if meta_data is None:
             meta_data = re.sub(r"\.nii(\.gz)?$", ".json", str(source))
+        
+        self.file_dep = [source, meta_data, slice_time]
+        self.targets = [target]
         
         self.actions = [
             (pASLSiemens.get_cbf, (source, meta_data, slice_time, target))]
