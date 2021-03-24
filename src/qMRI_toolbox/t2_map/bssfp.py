@@ -134,7 +134,10 @@ class bSSFP(spire.TaskFactory):
 def main():
     return entrypoint(
         bSSFP, [
-            ("sources", {"nargs": "+", "help": "SPGR images with different flip angles"}),
-            ("B1_map", {"help": "B1 map in SPGR space"}),
-            ("T1_map", {"help": "T1 map in SPGR space"}),
-            ("T2_map", {"help": "Path to the target MPF map"})])
+            (
+                "sources", {
+                    "nargs": "+", 
+                    "help": "bSSFP images with different phase steps increments"}),
+            ("B1_map", {"help": "B1 map in bSSFP space"}),
+            ("T1_map", {"help": "T1 map in bSSFP space"}),
+            ("T2_map", {"help": "Path to the target T2 map"})])

@@ -10,7 +10,6 @@ def main():
         "{}.{}".format(sys.modules[__name__].__package__, module_name))
     
     arguments = sys.argv[1:]
-    arguments[0] = "{} {}".format(sys.argv[0], sys.argv[1])
     sys.argv = arguments
     module.main()
 
