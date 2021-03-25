@@ -23,9 +23,7 @@ class SphericalHarmonics(spire.TaskFactory):
         self.actions = [
             ["dwi2fod", "-force", "msmt_csd", source]
                 + (["-mask", mask] if mask else [])
-                + list(itertools.chain(*zip(global_response, self.targets))),
-            # ["mtnormalise", "-force", "-mask", mask]
-            #     +list(itertools.chain(*zip(sh, sh))
+                + list(itertools.chain(*zip(global_response, self.targets)))
         ]
 
 def main():

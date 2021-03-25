@@ -1,5 +1,7 @@
+from .fod_segmentation import FODSegmentation
 from .mask import Mask
 from .mean_response import MeanResponse
+from .multi_tissue_normalization import MultiTissueNormalization
 from .noddi import NODDI
 from .noddi_responses import NODDIResponses
 from .preprocessing import Preprocessing
