@@ -9,7 +9,7 @@ class FODSegmentation(spire.TaskFactory):
     
     def __init__(self, fod, fixel_directory, afd=None, peak_amp=None, disp=None):
         spire.TaskFactory.__init__(self, str(fixel_directory))
-        self.file_dep = fod
+        self.file_dep = [fod]
         
         self.targets = [
             os.path.join(fixel_directory, "index.mif"),
