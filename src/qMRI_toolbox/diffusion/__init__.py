@@ -1,3 +1,4 @@
+from .b_zero import BZero
 from .fod_segmentation import FODSegmentation
 from .mask import Mask
 from .mean_response import MeanResponse
