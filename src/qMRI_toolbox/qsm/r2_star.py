@@ -53,5 +53,5 @@ def main():
             (
                 "--medi", {
                     "required": True, 
-                    "dest": "medi_toolbox_path", 
+                    "dest": "medi_toolbox", 
                     "help": "Path to the MEDI toolbox"})])
