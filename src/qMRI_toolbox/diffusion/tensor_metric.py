@@ -30,6 +30,6 @@ def main():
             ("target", {"help": "Target diffusion tensor image"}),
             (
                 "--num", {
-                    "type": "int", "help": "Desired eigenvalue or eigenvector"})
+                    "type": "int", "help": "Desired eigenvalue or eigenvector"}),
             ("--mask", {"help": "Binary mask"})
         ])
