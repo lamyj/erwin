@@ -47,14 +47,11 @@ class XFL(spire.TaskFactory):
     def get_fa_prep(meta_data):
         """ Return the flip angle of the preparation saturation pulse. """
         
-        csa_group = misc.siemens_csa.find_csa_group(meta_data) or 0x00291000
-        csa = dicomifier.dicom_to_nifti.siemens.parse_csa(
-            base64.b64decode(meta_data["{:08x}".format(csa_group+0x20)][0]))
-        protocol = csa["MrPhoenixProtocol"][0]
-        fa_prep = float(
-            re.search(
-                    br"sWiPMemBlock.adFree\[0\]\s*=\s*(\S+)$", protocol, re.M
-                ).group(1))
+        protocol = misc.siemens_csa.get_protocol(meta_data)
+        if protocol["tSequenceFileName"] != b"%CustomerSeq%\\ns_xfl":
+            print(protocol["tSequenceFileName"])
+            raise Exception("Unknown AFI data")
+        fa_prep = protocol["sWiPMemBlock"]["adFree"][0]
         
         return fa_prep
 
@@ -62,8 +59,9 @@ def main():
     return entrypoint(
         XFL, [
             ("source", {"help": "Flip angle map from the XFL"}),
+            ("target", {"help": "Path to the target B1 map"}),
             (
-                "meta_data", {
-                    "nargs": "?", 
-                    "help": "Meta-data associated with the source image"}),
-            ("target", {"help": "Path to the target B1 map"})])
+                "--meta-data", "-m", {
+                    "help": (
+                        "Optional meta-data. If not provided, deduced from the "
+                        "image.")})])

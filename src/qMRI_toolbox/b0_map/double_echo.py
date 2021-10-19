@@ -6,23 +6,31 @@ import nibabel
 import numpy
 import spire
 
-from .. import entrypoint
+from .. import entrypoint, misc
 
 class DoubleEcho(spire.TaskFactory):
     """ Compute the ΔB₀ map (in Hz) using the phase difference between two 
         echoes.
         
-        Reference: "Automatic field map generation and off-resonance correction
-        for projection reconstruction imaging". Nayak & Nishimura. Magnetic 
-        Resonance in Medicine 43(1). 2000.
+        Reference: "An in vivo automated shimming method taking into account
+        shim current constraints". Wen & Jaffer. Magnetic Resonance in Medicine
+        34(6), pp. 898-904. 1995. doi:10.1002/mrm.1910340616
     """
     
-    def __init__(self, sources, target):
+    def __init__(self, sources, target, meta_data=None):
         spire.TaskFactory.__init__(self, str(target))
         
         self.sources = sources
-        self.meta_data = [
-            re.sub(r"\.nii(\.gz)?$", ".json", str(x)) for x in sources]
+        if meta_data is None:
+            self.meta_data = [
+                re.sub(r"\.nii(\.gz)?$", ".json", str(x)) for x in sources]
+        else:
+            self.meta_data = meta_data
+        
+        if len(sources) != 2:
+            raise Exception("Expected two images, got {}".format(len(sources)))
+        if len(meta_data) != 2:
+            raise Exception("Expected two meta-data, got {}".format(len(meta_data)))
         
         self.file_dep = list(itertools.chain(sources, self.meta_data))
         self.targets = [target]
@@ -39,18 +47,29 @@ class DoubleEcho(spire.TaskFactory):
             with open(path) as fd:
                 meta_data_array.append(json.load(fd))
         
+        magnitude_indices = misc.search_magnitude(meta_data_array)
+        phase_indices = misc.search_phase(meta_data_array)
+        
+        if len(magnitude_indices) != 1:
+            raise Exception(
+                "Expected one magnitude image, got {}".format(
+                    len(magnitude_indices)))
+        if len(phase_indices) != 1:
+            raise Exception(
+                "Expected one phase image, got {}".format(
+                    len(phase_indices)))
+        
         # Complex signal for the two echoes
-        by_type = {
-            m["ImageType"][2]: s for s, m in zip(sources, meta_data_array)}
-        phase = by_type["P"].get_fdata() * numpy.pi/4096
-        S = by_type["M"].get_fdata() * numpy.exp(1j*phase)
+        magnitude = sources[magnitude_indices[0]].get_fdata()
+        phase = misc.get_phase_data(
+            sources[phase_indices[0]].get_fdata(),
+            meta_data_array[phase_indices[0]])
+        S = magnitude * numpy.exp(1j*phase)
         
         # Un-normalized, complex, phase difference
         delta_phase = S[..., 1] * S[..., 0].conj()
         # Real phase difference
         delta_phase = numpy.angle(delta_phase)
-        # numpy.arctan2(
-        #     numpy.imag(delta_phase), numpy.real(delta_phase))
         
         # Difference between echo times in seconds.
         echo_times = [x[0] for x in meta_data_array[0]["EchoTime"]]
@@ -70,4 +89,11 @@ def main():
                     "nargs": 2, 
                     "help": ("Double-echo SPGR images with magnitude and "
                         "phase (in any order)")}),
-            ("target", {"help": "Path to the target ΔB₀ map"})])
+            ("target", {"help": "Path to the target ΔB₀ map"}),
+            (
+                "--meta-data", "-m", {
+                    "nargs": 2,
+                    "help": (
+                        "Optional meta-data, in the same order as the images. "
+                        "If not provided, deduced from the images.")})
+        ])

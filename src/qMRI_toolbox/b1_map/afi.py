@@ -52,14 +52,10 @@ class AFI(spire.TaskFactory):
     def get_tr_ratio(meta_data):
         """ Read the TR ratio from the private data. """    
         
-        csa_group = misc.siemens_csa.find_csa_group(meta_data) or 0x00291000
-        csa = dicomifier.dicom_to_nifti.siemens.parse_csa(
-            base64.b64decode(meta_data["{:08x}".format(csa_group+0x20)][0]))
-        protocol = csa["MrPhoenixProtocol"][0]
-        tr_ratio = float(
-            re.search(
-                    br"sWiPMemBlock.alFree\[5\]\s*=\s*(\S+)$", protocol, re.M
-                ).group(1))
+        protocol = misc.siemens_csa.get_protocol(meta_data)
+        if protocol["tSequenceFileName"] != b"%CustomerSeq%\\MAFI":
+            raise Exception("Unknown AFI data")
+        tr_ratio = protocol["sWiPMemBlock"]["alFree"][5]
         
         return tr_ratio
         
@@ -67,4 +63,9 @@ def main():
     return entrypoint(
         AFI, [
             ("source", {"help": "Magnitude data of the AFI sequence"}),
-            ("target", {"help": "Path to the target B1 map"})])
+            ("target", {"help": "Path to the target B1 map"}),
+            (
+                "--meta-data", "-m", {
+                    "help": (
+                        "Optional meta-data. If not provided, deduced from the "
+                        "image.")})])
