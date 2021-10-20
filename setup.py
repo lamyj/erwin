@@ -8,7 +8,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 long_description = open(os.path.join(here, "README.md")).read()
 
 setuptools.setup(
-    name="qMRI_toolbox",
+    name="erwin",
     
     description="Toolbox to generate quantitative maps from MRI images",
     long_description=long_description,
@@ -52,7 +52,7 @@ setuptools.setup(
     package_dir={"": "src"},
     ext_modules=Cython.Build.cythonize([
         setuptools.Extension(
-            "qMRI_toolbox.mt_map.mpf", ["src/qMRI_toolbox/mt_map/mpf.pyx"])
+            "erwin.mt_map.mpf", ["src/erwin/mt_map/mpf.pyx"])
     ]),
     
     python_requires=">=3.5.*,",
@@ -64,4 +64,6 @@ setuptools.setup(
     install_requires=[
         "cython", "dmri-amico", "doit", "meg", "nibabel", "numpy", "scipy",
         "spire-pipeline>=1.1.1", "sycomore"],
+    
+    entry_points={ "console_scripts": [ "erwin=erwin.__main__:main"] },
 )
