@@ -7,10 +7,12 @@ import spire
 from .. import entrypoint
 
 class Preprocessing(spire.TaskFactory):
-    """ Preprocess a diffusion-weighted image using MRtrix (denoising, removal 
-        of Gibbs artifacts, inhomogeneity distortion correction, correction of 
-        intensity bias). The input image should include diffusion-related 
-        meta-data (phase-encoding information and diffusion-encoding scheme).
+    """ Preprocess a diffusion-weighted image using MRtrix.
+    
+        This includes denoising, removal of Gibbs artifacts, inhomogeneity 
+        distortion correction, and correction of intensity bias. The input
+        image should include diffusion-related meta-data (phase-encoding
+        information and diffusion-encoding scheme).
     """
     
     def __init__(self, source, target):

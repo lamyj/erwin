@@ -10,7 +10,7 @@ import spire
 from .. import entrypoint, misc
 
 class AFI(spire.TaskFactory):
-    """ Return the B1 map (as a relative factor of the true flip angle) from an
+    """ Relative B1 map (factor with respect to the true flip angle) from an
         AFI sequence.
         
         Reference: Actual flip-angle imaging in the pulsed steady state: A 

@@ -9,8 +9,10 @@ import spire
 from .. import entrypoint, misc
 
 class XFL(spire.TaskFactory):
-    """ Return the B1 map (as a relative factor of the true flip angle) from an
-        XFL sequence. On a single Tx system, the XFL sequence generates four 
+    """ Relative B1 map (factor with respect to the true flip angle) from an
+        XFL sequence.
+        
+        On a single Tx system, the XFL sequence generates four 
         volumes; this class expects the flip angle map as input, usually called
         "B1_Ampli".
         

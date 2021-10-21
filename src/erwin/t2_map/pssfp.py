@@ -12,7 +12,7 @@ from sycomore.units import *
 from .. import entrypoint, misc
 
 class pSSFP(spire.TaskFactory):
-    """ Compute a map of T2 from pSSFP images
+    """ Compute a map of T2 from pSSFP images.
         
         References:
         - Factors controlling T2 mapping from partially spoiled SSFP sequence: 

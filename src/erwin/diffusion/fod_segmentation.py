@@ -3,8 +3,10 @@ import spire
 from .. import entrypoint
 
 class FODSegmentation(spire.TaskFactory):
-    """ Perform segmentation of continuous Fibre Orientation Distributions 
-        (FODs) to produce discrete fixels (fod2fixel from MRtrix3).
+    """ Segmentation of continuous Fibre Orientation Distributions 
+        to discrete fixels.
+        
+        This wraps fod2fixel from MRtrix3.
     """
     
     def __init__(self, fod, fixel_directory, afd=None, peak_amp=None, disp=None):

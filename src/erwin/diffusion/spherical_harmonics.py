@@ -5,7 +5,9 @@ import spire
 from .. import entrypoint
 
 class SphericalHarmonics(spire.TaskFactory):
-    """ Perform multi-shell multi-tissue CSD (dwi2fod msmt_csd from MRtrix3).
+    """ Perform multi-shell multi-tissue CSD.
+        
+        This wraps dwi2fod msmt_csd from MRtrix3.
     """
     
     def __init__(

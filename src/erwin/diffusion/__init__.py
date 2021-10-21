@@ -1,4 +1,5 @@
 from .b_zero import BZero
+from .bruker_to_mif import BrukerToMIF
 from .fod_segmentation import FODSegmentation
 from .mask import Mask
 from .mean_response import MeanResponse

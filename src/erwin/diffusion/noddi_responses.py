@@ -7,8 +7,10 @@ from .. import entrypoint
 from .noddi import NODDI
 
 class NODDIResponses(spire.TaskFactory):
-    """ Generate the response functions for the two compartments using AMICO 
-        (only depends on the diffusion-encoding scheme).
+    """ Generate the response functions for the two NODDI compartments.
+        
+        This only depends on the diffusion-encoding scheme, and is based on
+        AMICO.
     """
     
     def __init__(

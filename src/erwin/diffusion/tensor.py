@@ -3,7 +3,9 @@ import spire
 from .. import entrypoint
 
 class Tensor(spire.TaskFactory):
-    """ Diffusion (kurtosis) tensor estimation (dwi2tensor from MRtrix3).
+    """ Diffusion and optional kurtosis tensor estimation.
+        
+        This wraps dwi2tensor from MRtrix3.
     """
     
     def __init__(

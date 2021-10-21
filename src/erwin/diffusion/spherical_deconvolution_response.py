@@ -4,7 +4,9 @@ from .. import entrypoint
 
 class SphericalDeconvolutionResponse(spire.TaskFactory):
     """ Unsupervised estimation of WM, GM and CSF response functions that does
-        not require a T1 image. (dwi2response dhollander from MRtrix3).
+        not require a T1 image.
+        
+        This wraps "dwi2response dhollander" from MRtrix3.
     """
     
     def __init__(self, source, prefix, mask=None):

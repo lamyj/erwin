@@ -14,6 +14,7 @@ from . import common
 
 class MTR(spire.TaskFactory):
     """ Compute the MT ratio (i.e. (MT_off - MT_on) / MT_off) of two images.
+        
         The sources images can be supplied in any order, they will be sorted
         before computing the ratio.
     """

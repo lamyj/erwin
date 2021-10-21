@@ -3,8 +3,7 @@ import spire
 from .. import entrypoint
 
 class BZero(spire.TaskFactory):
-    """ Extract the b=0 s/mm^2 images from a DWI data set and optionnaly average
-        them.
+    """ Extraction and optional average of b=0 s/mm^2 images from DWI data.
     """
     
     def __init__(self, source, target, average=False):

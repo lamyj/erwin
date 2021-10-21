@@ -9,8 +9,7 @@ import spire
 from .. import entrypoint, misc
 
 class DoubleEcho(spire.TaskFactory):
-    """ Compute the ΔB₀ map (in Hz) using the phase difference between two 
-        echoes.
+    """ ΔB₀ map (in Hz) using the phase difference between two echoes.
         
         Reference: "An in vivo automated shimming method taking into account
         shim current constraints". Wen & Jaffer. Magnetic Resonance in Medicine

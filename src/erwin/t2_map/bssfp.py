@@ -13,7 +13,7 @@ import spire
 from .. import entrypoint, misc
 
 class bSSFP(spire.TaskFactory):
-    """ Compute a map of T2 from bSSFP images
+    """ Compute a map of T2 from bSSFP images.
         
         Reference: "Analytical corrections of banding artifacts in driven
         equilibrium single pulse observation of T2 (DESPOT2)". Jutras et al.

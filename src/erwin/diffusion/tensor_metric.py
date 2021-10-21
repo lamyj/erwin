@@ -3,7 +3,9 @@ import spire
 from .. import entrypoint
 
 class TensorMetric(spire.TaskFactory):
-    """ Generate maps of tensor-derived parameters (tensor2metrix from MRtrix3).
+    """ Maps of tensor-derived parameters
+        
+        This wraps tensor2metrix from MRtrix3.
     """
     def __init__(self, source, kind, target, num=None, mask=None):
         spire.TaskFactory.__init__(self, str(target))

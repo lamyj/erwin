@@ -1,8 +1,11 @@
 import spire
 
+from .. import entrypoint
+
 class MeanResponse(spire.TaskFactory):
-    """ Calculate the mean response function from a set of text files 
-        (responsemean from MRtrix3).
+    """ Average ODF response functions.
+        
+        This wraps responsemean from MRtrix3.
     """
     
     def __init__(self, sources, target):

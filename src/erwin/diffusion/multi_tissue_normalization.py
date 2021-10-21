@@ -7,8 +7,9 @@ import spire
 from .. import entrypoint
 
 class MultiTissueNormalization(spire.TaskFactory):
-    """ Multi-tissue informed log-domain intensity normalisation (mtnormalise
-        from MRtrix3)
+    """ Multi-tissue informed log-domain intensity normalisation
+    
+        This wraps mtnormalise from MRtrix3.
     """
     
     def __init__(self, sources, mask, targets):
