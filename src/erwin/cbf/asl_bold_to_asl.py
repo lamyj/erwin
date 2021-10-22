@@ -18,7 +18,7 @@ class ASLBOLDToASL(spire.TaskFactory):
           stages. Roquet et al. Alzheimer's Research & Therapy 8(1). 2016.
     """
     
-    def __init__(self, source, meta_data, target, cutoff_frequency=0.1125):
+    def __init__(self, source, target, meta_data=None, cutoff_frequency=0.1125):
         spire.TaskFactory.__init__(self, str(target))
         
         self.file_dep = [source]
@@ -62,8 +62,13 @@ def main():
     return entrypoint(
         ASLBOLDToASL, [
             ("source", {"help": "Source ASL-BOLD image"}),
-            ("meta_data", {"nargs": "?", "help": "Source image meta-data"}),
             ("target", {"help": "Target ASL image"}),
+            (
+                "--meta_data", "-m", 
+                {
+                    "help": 
+                        "Optional meta-data. If not provided, deduced from the "
+                        "source image."}),
             (
                 "--cutoff-frequency", 
                 {"help": "Cut-off frequency", "type": float, "default": 0.1125})

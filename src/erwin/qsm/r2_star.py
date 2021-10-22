@@ -54,4 +54,9 @@ def main():
                 "--medi", {
                     "required": True, 
                     "dest": "medi_toolbox", 
-                    "help": "Path to the MEDI toolbox"})])
+                    "help": "Path to the MEDI toolbox"}),
+            (
+                "--meta-data", "-m", {
+                    "help": 
+                        "Optional meta-data. If not provided, deduced from the "
+                        "source image."})])

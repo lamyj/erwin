@@ -241,4 +241,10 @@ def main():
             ("B0_map", {"help": "B0 map in SPGR space"}),
             ("B1_map", {"help": "B1 map in SPGR space"}),
             ("T1_map", {"help": "T1 map in SPGR space"}),
-            ("MPF_map", {"help": "Path to the target MPF map"})])
+            ("MPF_map", {"help": "Path to the target MPF map"}),
+            (
+                "--meta-data", "-m", {
+                    "nargs": 2, 
+                    "help": 
+                        "Optional meta-data. If not provided, deduced from the "
+                        "source images."})])

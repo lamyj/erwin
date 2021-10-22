@@ -166,4 +166,10 @@ def main():
         VFA, [
             ("sources", {"nargs": 2, "help": "SPGR images with different flip angles"}),
             ("B1_map", {"help": "B1 map in SPGR space"}),
-            ("target", {"help": "Path to the target T1 map"})])
+            ("target", {"help": "Path to the target T1 map"}),
+            (
+                "--meta-data", "-m", {
+                    "nargs": 2, 
+                    "help": 
+                        "Optional meta-data. If not provided, deduced from the "
+                        "source images."})])

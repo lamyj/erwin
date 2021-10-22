@@ -21,7 +21,7 @@ class pASLSiemens(spire.TaskFactory):
           Resonance Imaging 34(4). 2011.
     """
     
-    def __init__(self, source, meta_data, slice_time, target):
+    def __init__(self, source, slice_time, target, meta_data=None):
         spire.TaskFactory.__init__(self, str(target))
         
         if meta_data is None:
@@ -109,7 +109,12 @@ def main():
     return entrypoint(
         pASLSiemens, [
             ("source", {"help": "Source ASL image"}),
-            ("meta_data", {"nargs": "?", "help": "Source image meta-data"}),
             ("slice_time", {"help": "Slice time image, in the same frame as source"}),
-            ("target", {"help": "Target CBF image"})
+            ("target", {"help": "Target CBF image"}),
+            (
+                "--meta_data", "-m", 
+                {
+                    "help": 
+                        "Optional meta-data. If not provided, deduced from the "
+                        "source image."})
         ])

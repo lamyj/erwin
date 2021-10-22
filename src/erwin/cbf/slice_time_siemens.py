@@ -13,7 +13,7 @@ class SliceTimeSiemens(spire.TaskFactory):
     """ Create a slice-time image from Siemens private data.
     """
     
-    def __init__(self, source, meta_data, target):
+    def __init__(self, source, target, meta_data=None):
         spire.TaskFactory.__init__(self, str(target))
         
         if meta_data is None:
@@ -45,6 +45,11 @@ def main():
     return entrypoint(
         SliceTimeSiemens, [
             ("source", {"help": "Source image"}),
-            ("meta_data", {"nargs": "?", "help": "Source image meta-data"}),
-            ("target", {"help": "Target slice-time image"})
+            ("target", {"help": "Target slice-time image"}),
+            (
+                "--meta_data", "-m", 
+                {
+                    "help": 
+                        "Optional meta-data. If not provided, deduced from the "
+                        "source image."}),
         ])

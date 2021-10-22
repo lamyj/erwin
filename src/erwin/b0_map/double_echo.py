@@ -86,13 +86,14 @@ def main():
             (
                 "sources", {
                     "nargs": 2, 
-                    "help": ("Double-echo SPGR images with magnitude and "
-                        "phase (in any order)")}),
+                    "help": 
+                        "Double-echo SPGR images with magnitude and phase "
+                        "(in any order)"}),
             ("target", {"help": "Path to the target ΔB₀ map"}),
             (
                 "--meta-data", "-m", {
                     "nargs": 2,
-                    "help": (
-                        "Optional meta-data, in the same order as the images. "
-                        "If not provided, deduced from the images.")})
+                    "help": 
+                        "Optional meta-data. If not provided, deduced from the "
+                        "source images."})
         ])

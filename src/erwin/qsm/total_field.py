@@ -87,4 +87,9 @@ def main():
                 "--medi", {
                     "required": True, 
                     "dest": "medi_toolbox", 
-                    "help": "Path to the MEDI toolbox"})])
+                    "help": "Path to the MEDI toolbox"}),
+            (
+                "--meta-data", "-m", {
+                    "help": 
+                        "Optional phase meta-data. If not provided, deduced "
+                        "from the phase image."})])

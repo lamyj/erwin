@@ -64,6 +64,6 @@ def main():
             ("target", {"help": "Path to the target B1 map"}),
             (
                 "--meta-data", "-m", {
-                    "help": (
+                    "help": 
                         "Optional meta-data. If not provided, deduced from the "
-                        "image.")})])
+                        "source image."})])
