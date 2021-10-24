@@ -1,56 +1,26 @@
-import argparse
-import base64
-import itertools
-import json
-import re
-import sys
-
-import dicomifier
 import nibabel
 import numpy
 import spire
 
-from . import common
 from .. import entrypoint
 
 class MTR(spire.TaskFactory):
-    """ Compute the MT ratio (i.e. (MT_off - MT_on) / MT_off) of two images.
+    """ Compute the MT ratio of two images.
         
         The sources images can be supplied in any order, they will be sorted
         before computing the ratio.
     """
     
-    def __init__(self, sources, target, meta_data=None):
+    def __init__(self, MT_off, MT_on, target):
         spire.TaskFactory.__init__(self, str(target))
         
-        self.sources = sources
-        
-        if meta_data is None:
-            meta_data = [
-                re.sub(r"\.nii(\.gz)?$", ".json", str(x)) for x in sources]
-        self.meta_data = meta_data
-        
-        self.file_dep = list(itertools.chain(sources, meta_data))
+        self.file_dep = [MT_off, MT_on]
         self.targets = [target]
         
-        self.actions = [(MTR.mtr_map, (sources, meta_data, target))]
+        self.actions = [(MTR.mtr_map, (MT_off, MT_on, target))]
     
     @staticmethod
-    def mtr_map(source_paths, meta_data_paths, mtr_map_path):
-        meta_data_array = []
-        for path in meta_data_paths:
-            with open(path) as fd:
-                meta_data_array.append(json.load(fd))
-        
-        MT_off_path, MT_on_path = None, None
-        for source_path, meta_data in zip(source_paths, meta_data_array):
-            pulses = common.get_pulses(meta_data)
-            
-            if len(pulses) == 1:
-                MT_off_path = source_path
-            elif len(pulses) == 2:
-                MT_on_path = source_path
-        
+    def mtr_map(MT_off_path, MT_on_path, mtr_map_path):
         MT_off = nibabel.load(MT_off_path)
         MT_on = nibabel.load(MT_on_path)
         
@@ -58,7 +28,7 @@ class MTR(spire.TaskFactory):
             MT_off_array = MT_off.get_fdata()
             MT_on_array = MT_on.get_fdata()
             # If we have multiple echoes, average them
-            if len(meta_data_array[0]["EchoTime"]) > 1:
+            if MT_on.ndim > 3:
                 MT_off_array = MT_off_array.mean(axis=-1)
                 MT_on_array = MT_on_array.mean(axis=-1)
             MTR = 1 - MT_on_array / MT_off_array
@@ -71,14 +41,6 @@ class MTR(spire.TaskFactory):
 def main():
     return entrypoint(
         MTR, [
-            (
-                "source", {
-                    "nargs": 2,
-                    "help": "SPGR images with and without MT pulse (in any order)"}),
-            ("target", {"help": "Path to the target MTR map"}),
-            (
-                "--meta-data", "-m", {
-                    "nargs": 2, 
-                    "help": 
-                        "Optional meta-data. If not provided, deduced from the "
-                        "source images."})])
+            ("--MT-off", "--mt-off", {"help": "SPGR image without MT pulse"}),
+            ("--MT-on", "--mt-on", {"help": "SPGR image with MT pulse"}),
+            ("--target", {"help": "Path to the target MTR map"})])

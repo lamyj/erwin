@@ -1,13 +1,10 @@
-import json
 import os
-import re
 
-import meg
 import nibabel
 import numpy
 import spire
 
-from .. import entrypoint
+from .. import entrypoint, parsing
 
 class MediL1(spire.TaskFactory):
     """ Compute the QSM using the MEDI+0 method of the MEDI toolbox.
@@ -19,28 +16,28 @@ class MediL1(spire.TaskFactory):
     """
     
     def __init__(
-            self, magnitude, total_field, sd_noise, object_field, brain, 
-            ventricles, target, medi_toolbox, meta_data=None):
+            self, magnitude, imaging_frequency, echo_times, total_field, 
+            sd_noise, object_field, brain, ventricles, target, medi_toolbox):
         spire.TaskFactory.__init__(self, str(target))
         
-        if meta_data is None:
-            meta_data = re.sub(r"\.nii(\.gz)?$", ".json", str(magnitude))
-        
         self.file_dep = [
-            magnitude, total_field, object_field, brain, ventricles, meta_data]
+            magnitude, total_field, object_field, brain, ventricles]
         self.targets = [target]
         
         self.actions = [
             (
                 MediL1.medi, (
-                    magnitude, total_field, sd_noise, object_field, brain, 
-                    ventricles, meta_data, target, medi_toolbox))]
+                    magnitude, imaging_frequency, echo_times, total_field,
+                    sd_noise, object_field, brain, ventricles, target,
+                    medi_toolbox))]
     
     @staticmethod
     def medi(
-            magnitude_path, total_field_path, sd_noise_path, object_field_path,
-            brain_path, ventricles_path, meta_data_path, target_path,
-            medi_toolbox_path):
+            magnitude_path, imaging_frequency, echo_times, total_field_path,
+            sd_noise_path, object_field_path, brain_path, ventricles_path,
+            target_path, medi_toolbox_path):
+        
+        import meg
         
         magnitude = nibabel.load(magnitude_path)
         total_field = nibabel.load(total_field_path)
@@ -49,13 +46,10 @@ class MediL1(spire.TaskFactory):
         brain = nibabel.load(brain_path)
         ventricles = nibabel.load(ventricles_path)
         
-        with open(meta_data_path) as fd:
-            meta_data = json.load(fd)
-        
-        echo_times = [1e-3*x[0] for x in meta_data["EchoTime"]]
+        echo_times = [1e-3*x[0] for x in echo_times]
         echo_spacing = numpy.diff(echo_times).mean()
         
-        imaging_frequency = 1e6 * meta_data["ImagingFrequency"][0]
+        imaging_frequency = 1e6 * imaging_frequency
         
         with meg.Engine() as engine:
             engine(f"run('{medi_toolbox_path}/MEDI_set_path.m');")
@@ -95,18 +89,19 @@ class MediL1(spire.TaskFactory):
 def main():
     return entrypoint(
         MediL1, [
-            ("magnitude", {"help": "Multi-echo magnitude image"}),
-            ("total_field", {"help": "Total susceptibility field"}),
+            ("--magnitude", {"help": "Multi-echo magnitude image"}),
+            parsing.ImagingFrequency,
+            parsing.EchoTimes,
+            ("--total-field", {"help": "Total susceptibility field"}),
             (
-                "sd_noise", {
+                "--sd-noise", {
                     "help": "Standard deviation of noise "
                         "in total susceptibility field"}),
-            ("object_field", {"help": "Foreground susceptibility field"}),
-            ("brain", {"help": "Brain mask"}),
-            ("ventricles", {"help": "Ventricles mask"}),
-            ("target", {"help": "Total field image"}),
+            ("--object-field", {"help": "Foreground susceptibility field"}),
+            ("--brain", {"help": "Brain mask"}),
+            ("--ventricles", {"help": "Ventricles mask"}),
+            ("--target", {"help": "Total field image"}),
             (
                 "--medi", {
-                    "required": True, 
                     "dest": "medi_toolbox", 
                     "help": "Path to the MEDI toolbox"})])

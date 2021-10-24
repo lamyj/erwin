@@ -1,9 +1,5 @@
-import argparse
 import itertools
-import json
 import multiprocessing
-import re
-import sys
 import warnings
 
 import nibabel
@@ -12,9 +8,7 @@ import scipy.integrate
 import scipy.optimize
 import spire
 
-from .. import entrypoint
-
-from . import common
+from .. import entrypoint, parsing
 
 import pyximport
 pyximport.install()
@@ -28,60 +22,39 @@ class SinglePoint(spire.TaskFactory):
         Resonance in Medicine 68(1). 2012.
     """
     
-    def __init__(self, sources, B0_map, B1_map, T1_map, MPF_map, meta_data=None):
+    def __init__(
+            self, MT_off, MT_on, 
+            mt_flip_angle, mt_duration, mt_frequency_offset, 
+            flip_angle, repetition_time,
+            B0_map, B1_map, T1_map, MPF_map):
         spire.TaskFactory.__init__(self, str(MPF_map))
-        
-        self.sources = sources
-        
-        if meta_data is None:
-            meta_data = [
-                re.sub(r"\.nii(\.gz)?$", ".json", str(x)) for x in sources]
-        self.meta_data = meta_data
         
         self.B0_map = B0_map
         self.B1_map = B1_map
         self.T1_map = T1_map
         
-        self.file_dep = list(itertools.chain(
-            sources, meta_data, [B0_map, B1_map, T1_map]))
+        self.file_dep = [MT_off, MT_on, B0_map, B1_map, T1_map]
         self.targets = [MPF_map]
         
         self.actions = [
             (
                 SinglePoint.mpf_map, 
-                (sources, meta_data, B0_map, B1_map, T1_map, MPF_map))]
+                (
+                    MT_off, MT_on,
+                    mt_flip_angle, mt_duration, mt_frequency_offset, 
+                    flip_angle, repetition_time, 
+                    B0_map, B1_map, T1_map, MPF_map))]
     
     @staticmethod
     def mpf_map(
-            source_paths, meta_data_paths, 
+            MT_off_path, MT_on_path, 
+            mt_flip_angle, mt_duration, mt_frequency_offset, 
+            flip_angle, repetition_time,
             B0_map_path, B1_map_path, T1_map_path, 
             MPF_map_path):
         
-        # Load the meta-data
-        meta_data_array = []
-        for path in meta_data_paths:
-            with open(path) as fd:
-                meta_data_array.append(json.load(fd))
-        
-        # Get the pulse data
-        pulses = [common.get_pulses(x) for x in meta_data_array]
-        mt_pulses_info = [common.get_mt_pulse_info(x) for x in meta_data_array]
-        
-        # Sort the source paths, meta data and pulse info 
-        # in (MT_off, MT_on) order
-        source_paths = [
-            path for path, _ in sorted(
-                zip(source_paths, pulses), key=lambda x: len(x[1]))]
-        meta_data_array = [
-            meta_data for meta_data, _ in sorted(
-                zip(meta_data_array, pulses), key=lambda x: len(x[1]))]
-        pulses.sort(key=lambda x: len(x))
-        mt_pulses_info = [
-            mt_pulse_info for mt_pulse_info, _ in sorted(
-                zip(mt_pulses_info, pulses), key=lambda x: len(x[1]))]
-        
         # Load the images
-        sources = [nibabel.load(x) for x in source_paths]
+        MT_off, MT_on = [nibabel.load(x) for x in source_paths]
         B0_map = nibabel.load(B0_map_path)
         B1_map = nibabel.load(B1_map_path)
         T1_map = nibabel.load(T1_map_path)
@@ -91,7 +64,7 @@ class SinglePoint(spire.TaskFactory):
         with numpy.errstate(divide="ignore", invalid="ignore"):
             R1 = 1/T1
         T2_free = 0.022*T1
-        delta_omega = mt_pulses_info[1]["frequency_offset"] - B0_map.get_fdata()
+        delta_omega = mt_frequency_offset - B0_map.get_fdata()
         
         # Compute all possible lineshapes, and get the lineshape for each voxel
         # of the delta_omega map (rounded to the nearest Hz).
@@ -100,10 +73,10 @@ class SinglePoint(spire.TaskFactory):
         
         # Saturation power of the MT saturation pulse
         omega_1_rms_nominal = SinglePoint.omega_1_rms_gaussian_pulse(
-            mt_pulses_info[1]["duration"], mt_pulses_info[1]["angle"])
+            mt_duration*1e-3, numpy.radians(mt_flip_angle))
         omega_1_rms = omega_1_rms_nominal * B1_map.get_fdata()
         
-        source_arrays = [x.get_fdata() for x in sources]
+        source_arrays = [x.get_fdata() for x in [MT_off, MT_on]]
         if len(meta_data_array[0]["EchoTime"]) > 1:
             source_arrays = [x.mean(axis=-1) for x in source_arrays]
         with numpy.errstate(divide="ignore", invalid="ignore"):
@@ -113,9 +86,8 @@ class SinglePoint(spire.TaskFactory):
         
         f = SinglePoint.estimate_f_map(
             S_ratio, R1, T2_free, delta_omega, omega_1_rms, G,
-            meta_data_array[0]["RepetitionTime"][0]*1e-3, 
-            mt_pulses_info[1]["duration"], 
-            numpy.radians(meta_data_array[0]["FlipAngle"][0]), 
+            repetition_time*1e-3, mt_duration*1e-3, 
+            numpy.radians(flip_angle), 
             f0)
 
         # Clamp the MPF map in its "true" range
@@ -123,7 +95,7 @@ class SinglePoint(spire.TaskFactory):
         f[f>1] = numpy.nan
         
         # Save as percents
-        nibabel.save(nibabel.Nifti1Image(1e2*f, sources[0].affine), MPF_map_path)
+        nibabel.save(nibabel.Nifti1Image(1e2*f, MT_off.affine), MPF_map_path)
     
     @staticmethod
     def super_lorentzian_lineshapes(T2_bound):
@@ -237,14 +209,21 @@ class SinglePoint(spire.TaskFactory):
 def main():
     return entrypoint(
         SinglePoint, [
-            ("sources", {"nargs": 2, "help": "SPGR images with different flip angles"}),
-            ("B0_map", {"help": "B0 map in SPGR space"}),
-            ("B1_map", {"help": "B1 map in SPGR space"}),
-            ("T1_map", {"help": "T1 map in SPGR space"}),
-            ("MPF_map", {"help": "Path to the target MPF map"}),
+            ("--MT-off", "--mt-off", {"help": "SPGR image without MT pulse"}),
+            ("--MT-on", "--mt-on", {"help": "SPGR image with MT pulse"}),
             (
-                "--meta-data", "-m", {
-                    "nargs": 2, 
-                    "help": 
-                        "Optional meta-data. If not provided, deduced from the "
-                        "source images."})])
+                "--mt-flip-angle", {
+                    "type": float, "help": "Flip angle of the MT pulse (°)"}),
+            (
+                "--mt-duration", {
+                    "type": float, "help": "Duration of the MT pulse (ms)"}),
+            (
+                "--mt-frequency-offset", {
+                    "type": float,
+                    "help": "Frequency offset of the MT pulse (Hz)"}),
+            parsing.FlipAngle,
+            parsing.RepetitionTime,
+            ("--B0-map", "--b0-map", {"help": "B0 map in SPGR space"}),
+            ("--B1-map", "--b1-map", {"help": "B1 map in SPGR space"}),
+            ("--T1-map", "--t1-map", {"help": "T1 map in SPGR space"}),
+            ("--MPF-map", "--mpf-map", {"help": "Path to the target MPF map"})])

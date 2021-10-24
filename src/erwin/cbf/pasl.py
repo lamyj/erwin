@@ -7,9 +7,9 @@ import nibabel
 import numpy
 import spire
 
-from .. import entrypoint, misc
+from .. import entrypoint, parsing
 
-class pASLSiemens(spire.TaskFactory):
+class pASL(spire.TaskFactory):
     """ Compute the CBF based on a pASL from Siemens.
         
         References:
@@ -21,34 +21,23 @@ class pASLSiemens(spire.TaskFactory):
           Resonance Imaging 34(4). 2011.
     """
     
-    def __init__(self, source, slice_time, target, meta_data=None):
+    def __init__(self, source, echo_time, inversion_times, slice_time, target):
         spire.TaskFactory.__init__(self, str(target))
         
-        if meta_data is None:
-            meta_data = re.sub(r"\.nii(\.gz)?$", ".json", str(source))
-        
-        self.file_dep = [source, meta_data, slice_time]
+        self.file_dep = [source, slice_time]
         self.targets = [target]
         
         self.actions = [
-            (pASLSiemens.get_cbf, (source, meta_data, slice_time, target))]
+            (
+                pASL.get_cbf,
+                (source, echo_time, inversion_times, slice_time, target))]
     
-    def get_cbf(source_path, meta_data_path, slice_time_path, target_path):
+    def get_cbf(
+            source_path, echo_time, inversion_times, slice_time_path,
+            target_path):
         source = nibabel.load(source_path)
-        
-        with open(meta_data_path) as fd:
-            meta_data = json.load(fd)
-        
         slice_time = nibabel.load(slice_time_path)
         
-        csa_group = misc.siemens_csa.find_csa_group(meta_data) or 0x00291000
-        csa = dicomifier.dicom_to_nifti.siemens.parse_csa(
-            base64.b64decode(meta_data["{:08x}".format(csa_group+0x20)][0]))
-        protocol = csa["MrPhoenixProtocol"][0]
-        ascconv = re.search(
-            b"### ASCCONV BEGIN ###\s+(.+)\s+### ASCCONV END ###", protocol, 
-            flags=re.DOTALL).group(1).decode()
-
         # Blood/tissue water partition coefficient, in L/kg
         # - 0.9 mL/g in Wang et al. and Foucher et al. (global)
         # - 0.98 mL/g in Foucher (GM)
@@ -68,14 +57,13 @@ class pASLSiemens(spire.TaskFactory):
         delta_R2_star = 20
         
         # Echo time in s
-        TE = meta_data["EchoTime"][0]*1e-3
+        TE = echo_time * 1e-3
 
         # Inversion times, as defined in Wang et al., in seconds
-        TI = re.findall(r"^a.TI\[\d+]\s+=\s+([\d.]+)", ascconv, flags=re.M)
         # Time between inversion and saturation
-        TI_1 = float(TI[1]) / 1e6
+        TI_1 = inversion_times[0] * 1e-3
         # Time between inversion and image acquisition of *first* slice
-        TI_2 = float(TI[2]) / 1e6
+        TI_2 = inversion_times[1] * 1e-3
         # Convert TI_2 to real slice acquistion time
         TI_2 = TI_2 + slice_time.get_fdata()
         # WARNING: slice timing may vary across volumes. Average the 
@@ -107,14 +95,12 @@ class pASLSiemens(spire.TaskFactory):
 
 def main():
     return entrypoint(
-        pASLSiemens, [
-            ("source", {"help": "Source ASL image"}),
-            ("slice_time", {"help": "Slice time image, in the same frame as source"}),
-            ("target", {"help": "Target CBF image"}),
+        pASL, [
+            ("--source", {"help": "Source ASL image"}),
+            parsing.EchoTime,
+            parsing.Multiple(parsing.InversionTimes, 2),
             (
-                "--meta_data", "-m", 
-                {
-                    "help": 
-                        "Optional meta-data. If not provided, deduced from the "
-                        "source image."})
+                "--slice-time", {
+                    "help": "Slice time image, in the same frame as source"}),
+            ("--target", {"help": "Target CBF image"})
         ])

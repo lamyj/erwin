@@ -1,7 +1,10 @@
 import base64
+import json
 import re
 
 import dicomifier
+
+from .. import entrypoint
 
 def find_private_group(meta_data, private_creator, group):
     private_group = None
@@ -30,3 +33,47 @@ def get_protocol(meta_data):
     
     protocol = dicomifier.dicom_to_nifti.siemens.parse_protocol(match.group(1).strip())
     return protocol
+
+class ProtocolItem(object):
+    """ Return a parameter value from the MR protocol.
+    """
+    
+    def __init__(self, meta_data, path):
+        with open(meta_data) as fd:
+            meta_data = json.load(fd)
+        protocol = get_protocol(meta_data)
+        
+        self.actions = [(ProtocolItem.get_value, (protocol, path))]
+    
+    @staticmethod
+    def get_value(protocol, path):
+        value = protocol
+        for item in path.split("."):
+            match = re.match(r"^(\w+)\[(\d+)\]$", item)
+            
+            if match:
+                name, index = match.groups()
+                index = int(index)
+            else:
+                name = item
+                index = None
+            try:
+                value = value[name]
+                if index is not None:
+                    value = value[index]
+            except:
+                raise Exception("No such item: {}".format(item))
+        if isinstance(value, bytes):
+            value = value.decode()
+        print(value)
+
+def main():
+    return entrypoint(
+        ProtocolItem, [
+            ("--meta-data", {"help": "Siemens meta-data"}),
+            (
+                "--path", {
+                    "help": 
+                        "Path to the element inside the protocol "
+                        "e.g. sTXSPEC.asNucleusInfo[0].tNucleus"})]
+    )

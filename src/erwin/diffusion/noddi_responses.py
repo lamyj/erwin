@@ -3,7 +3,7 @@ import os
 import amico
 import spire
 
-from .. import entrypoint
+from .. import entrypoint, parsing
 from .noddi import NODDI
 
 class NODDIResponses(spire.TaskFactory):
@@ -51,22 +51,22 @@ class NODDIResponses(spire.TaskFactory):
 def main():
     return entrypoint(
         NODDIResponses, [
-            ("dwi", {"help": "Diffusion-weighted image, in MRtrix format"}),
-            ("response_directory", {"help": "Target response directory"}),
-            (
+            ("--dwi", {"help": "Diffusion-weighted image, in MRtrix format"}),
+            ("--response-directory", {"help": "Target response directory"}),
+            parsing.Optional([
                 "--shell-width", {
                     "type":float, "default": 0, 
-                    "help": "Width used to group the real b-values in ideal shells"}),
-            (
+                    "help": "Width used to group the real b-values in ideal shells"}]),
+            parsing.Optional([
                 "--b0-threshold", {
                     "type":float, "default": 0, 
-                    "help": "Lower b-value threshold"}),
-            (
+                    "help": "Lower b-value threshold"}]),
+            parsing.Optional([
                 "--lmax", {
                     "type":int, "default": 12,
-                    "help": "Maximum order of spherical harmonics"}),
-            (
+                    "help": "Maximum order of spherical harmonics"}]),
+            parsing.Optional([
                 "--ndirs", {
                     "type": int, "default": 32761,
-                    "help": "Number of directions on the hemisphere"})
+                    "help": "Number of directions on the hemisphere"}])
         ])

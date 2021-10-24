@@ -1,4 +1,3 @@
-import meg
 import nibabel
 import numpy
 import spire
@@ -6,7 +5,7 @@ import spire
 from .. import entrypoint
 
 class BackgroundFieldRemoval(spire.TaskFactory):
-    """ Remove the background field using the LBV method of the MEDI toolbox.
+    """ Background field removal using the LBV method of the MEDI toolbox.
         
         Reference: Background field removal by solving the Laplacian boundary
         value problem. Zhou et al. NMR in Biomedicine 27(3). 2014.
@@ -22,6 +21,8 @@ class BackgroundFieldRemoval(spire.TaskFactory):
             (BackgroundFieldRemoval.lbv, (f_total, mask, medi_toolbox, target))]
     
     def lbv(f_total_path, mask_path, medi_toolbox_path, target_path):
+        import meg
+        
         f_total_image = nibabel.load(f_total_path)
         mask_image = nibabel.load(mask_path)
         
@@ -42,11 +43,10 @@ class BackgroundFieldRemoval(spire.TaskFactory):
 def main():
     return entrypoint(
         BackgroundFieldRemoval, [
-            ("f_total", {"help": "Total field image"}),
-            ("mask", {"help": "Mask image"}),
-            ("target", {"help": "Object field image"}),
+            ("--f-total", {"help": "Total field image"}),
+            ("--mask", {"help": "Mask image"}),
+            ("--target", {"help": "Object field image"}),
             (
                 "--medi", {
-                    "required": True, 
                     "dest": "medi_toolbox", 
                     "help": "Path to the MEDI toolbox"})])

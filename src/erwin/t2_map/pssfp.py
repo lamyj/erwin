@@ -7,9 +7,8 @@ import dicomifier
 import nibabel
 import numpy
 import spire
-from sycomore.units import *
 
-from .. import entrypoint, misc
+from .. import entrypoint, parsing
 
 class pSSFP(spire.TaskFactory):
     """ Compute a map of T2 from pSSFP images.
@@ -23,57 +22,44 @@ class pSSFP(spire.TaskFactory):
           spoiling. Ganter. Magnetic Resonance in Medicine 55(1). 2006.
     """
     
-    def __init__(self, sources, B1_map, T1_map, T2_map, meta_data=None):
-        spire.TaskFactory.__init__(self, str(T2_map))
-        
-        if meta_data is None:
-            meta_data = [
-                re.sub(r"\.nii(\.gz)?$", ".json", str(x)) for x in sources]
+    def __init__(
+            self, sources, flip_angle, phase_increments, repetition_time,
+            B1_map, T1_map, target):
+        spire.TaskFactory.__init__(self, str(target))
         
         try:
             global_T1 = float(T1_map)
         except ValueError:
             global_T1 = None
         
-        self.file_dep = list(itertools.chain(sources, meta_data, [B1_map]))
+        self.file_dep = [*sources, B1_map]
         if not global_T1:
             self.file_dep.append(T1_map)
-        self.targets = [T2_map]
+        self.targets = [target]
         
         self.actions = [
             (
                 pSSFP.t2_map, (
-                    sources, meta_data, B1_map, 
-                    global_T1 if global_T1 else T1_map, T2_map))]
+                    sources, flip_angle, phase_increments, repetition_time,
+                    B1_map, global_T1 if global_T1 else T1_map, target))]
     
     @staticmethod
     def t2_map(
-            source_paths, meta_data_paths, B1_map_path, T1, 
-            T2_map_path):
+            source_paths, flip_angle, phase_increments, repetition_time,
+            B1_map_path, T1, T2_map_path):
 
         sources = [nibabel.load(x) for x in source_paths]
-        meta_data = [json.load(open(x)) for x in meta_data_paths]
         B1 = nibabel.load(B1_map_path).get_fdata()
 
-        alpha = (meta_data[0]["FlipAngle"][0]*deg).magnitude
+        alpha = numpy.radians(flip_angle)
         alpha *= B1
         
-        TR = (meta_data[0]["RepetitionTime"][0]*ms).magnitude
+        TR = repetition_time*1e-3
         
         if not isinstance(T1, float):
             T1 = nibabel.load(T1).get_fdata()
 
-        phi = [None, None]
-        for index, item in enumerate(meta_data):
-            csa_group = misc.siemens_csa.find_csa_group(item)
-            csa = dicomifier.dicom_to_nifti.siemens.parse_csa(
-                base64.b64decode(item["{:08x}".format(csa_group+0x20)][0]))
-            protocol = csa["MrPhoenixProtocol"][0]
-            phase_increment = float(
-                re.search(
-                        br"sWiPMemBlock.alFree\[5\]\s*=\s*(\S+)$", protocol, re.M
-                    ).group(1))
-            phi[index] = (phase_increment*deg).magnitude
+        phi = numpy.radians(phase_increments)
 
         S = [x.get_fdata() for x in sources]
         S_sq = numpy.power(S, 2)
@@ -113,9 +99,17 @@ def main():
     return entrypoint(
         pSSFP, [
             (
-                "sources", {
+                "--sources", {
                     "nargs": "+", "metavar": "source",
                     "help": "pSSFP images with different phase steps increments"}),
-            ("B1_map", {"help": "B1 map in pSSFP space"}),
-            ("T1_map", {"help": "T1 map in pSSFP space or global T1 in s"}),
-            ("T2_map", {"help": "Path to the target T2 map"})])
+            parsing.FlipAngle,
+            parsing.RepetitionTime,
+            parsing.Multiple(
+                [
+                    "--phase-increments", {
+                        "type": float,
+                        "help": "Phase increment for each bSSFP image (°)"}],
+                2),
+            ("--B1-map", "--b1-map", {"help": "B1 map in bSSFP space"}),
+            ("--T1-map", "--t1-map", {"help": "T1 map in bSSFP space"}),
+            ("--target", {"help": "Target T2 map"})])

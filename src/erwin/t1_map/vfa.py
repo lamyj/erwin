@@ -1,16 +1,10 @@
-import argparse
-import itertools
-import json
-import re
-import sys
-
 import nibabel
 import numpy
 import spire
 import sycomore
 from sycomore.units import *
 
-from .. import entrypoint
+from .. import entrypoint, parsing
 
 class VFA(spire.TaskFactory):
     """ Compute the T1 map based on SPGR images acquired with a VFA scheme.
@@ -20,48 +14,39 @@ class VFA(spire.TaskFactory):
         Medicine 61(1). 2009.
     """
     
-    def __init__(self, sources, B1_map, target, meta_data=None):
+    def __init__(
+            self, sources, flip_angles, echo_time, repetition_time, B1_map,
+            target):
         spire.TaskFactory.__init__(self, str(target))
         
-        self.sources = sources
-        
-        if meta_data is None:
-            meta_data = [
-                re.sub(r"\.nii(\.gz)?$", ".json", str(x)) for x in sources]
-        self.meta_data = meta_data
-        
-        self.B1_map = B1_map
-        
-        self.file_dep = list(itertools.chain(sources, meta_data, [B1_map]))
+        self.file_dep = [*sources, B1_map]
         self.targets = [target]
         
-        self.actions = [(VFA.t1_map, (sources, meta_data, B1_map, target))]
+        self.actions = [
+            (VFA.t1_map, (
+                sources, flip_angles, echo_time, repetition_time, B1_map,
+                target))]
     
-    def t1_map(source_paths, meta_data_paths, B1_map_path, T1_map_path):
+    def t1_map(
+            source_paths, flip_angles, echo_time, repetition_time, B1_map_path,
+            T1_map_path):
         """T1 map generation"""
         
-        meta_data = []
-        for path in meta_data_paths:
-            with open(path) as fd:
-                meta_data.append(json.load(fd))
-        
         # TE (in seconds)
-        TE = numpy.asarray(meta_data[0]["EchoTime"]) * 1e-3
+        TE = echo_time * 1e-3
         # TR (in seconds)
-        TR = meta_data[0]["RepetitionTime"][0] * 1e-3
+        TR = repetition_time * 1e-3
         
         # Load the VFA signal
         sources = [nibabel.load(x) for x in source_paths]
         signal = numpy.asarray([x.get_fdata() for x in sources])
         # If we have multiple echoes, average them
-        if len(meta_data[0]["EchoTime"]) > 1:
+        if signal.ndim > 3:
             signal = signal.mean(axis=-1)
         
-        # Get the nominal flip angles (in radians) from the meta-data and 
-        # compute a flip angle map
+        # Compute a flip angle map from the nominal flip angles
         B1_map = nibabel.load(B1_map_path).get_fdata()
-        nominal_flip_angles = [
-            numpy.radians(x["FlipAngle"][0]) for x in meta_data]
+        nominal_flip_angles = [numpy.radians(x) for x in flip_angles]
         flip_angle = numpy.asarray([B1_map * x for x in nominal_flip_angles])
         
         # Compute the B1-corrected T1 map
@@ -76,7 +61,7 @@ class VFA(spire.TaskFactory):
         
         # Compute the RF-spoiling correction
         pA, pB = VFA.rf_spoiling_correction_paremeters(
-            [x*rad for x in nominal_flip_angles], TE.mean()*s, TR*s)
+            [x*rad for x in nominal_flip_angles], TE*s, TR*s)
         
         A = numpy.polyval(pA, B1_map)
         B = numpy.polyval(pB, B1_map)
@@ -164,12 +149,13 @@ class VFA(spire.TaskFactory):
 def main():
     return entrypoint(
         VFA, [
-            ("sources", {"nargs": 2, "help": "SPGR images with different flip angles"}),
-            ("B1_map", {"help": "B1 map in SPGR space"}),
-            ("target", {"help": "Path to the target T1 map"}),
-            (
-                "--meta-data", "-m", {
-                    "nargs": 2, 
-                    "help": 
-                        "Optional meta-data. If not provided, deduced from the "
-                        "source images."})])
+            parsing.Multiple(
+                [
+                    "--sources",
+                    {"help": "SPGR images with different flip angles"}],
+                2),
+            parsing.Multiple(parsing.FlipAngles, 2),
+            parsing.EchoTime,
+            parsing.RepetitionTime,
+            ("--B1-map", "--b1-map", {"help": "B1 map in SPGR space"}),
+            ("--target", {"help": "Path to the target T1 map"})])

@@ -31,6 +31,6 @@ class SphericalHarmonics(spire.TaskFactory):
 def main():
     return entrypoint(
         SphericalHarmonics, [
-            ("source", {"help": "Source DWI image"}),
-            ("global_response", {"help": "Single-fiber response files"}),
-            ("prefix", {"help": "Prefix of the target harmonics files"})])
+            ("--source", {"help": "Source DWI image"}),
+            ("--global-response", {"help": "Single-fiber response files"}),
+            ("--prefix", {"help": "Prefix of the target harmonics files"})])

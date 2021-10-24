@@ -10,7 +10,7 @@ import nibabel
 import numpy
 import spire
 
-from .. import entrypoint, misc
+from .. import entrypoint, parsing
 
 class bSSFP(spire.TaskFactory):
     """ Compute a map of T2 from bSSFP images.
@@ -20,124 +20,86 @@ class bSSFP(spire.TaskFactory):
         Magnetic Resonance in Medicine 76(6). 2015.
     """
     
-    def __init__(self, sources, B1_map, T1_map, T2_map, meta_data=None):
-        spire.TaskFactory.__init__(self, str(T2_map))
+    def __init__(
+            self, sources, flip_angles, phase_increments, repetition_time,
+            B1_map, T1_map, target):
+        spire.TaskFactory.__init__(self, str(target))
         
-        self.sources = sources
-        
-        if meta_data is None:
-            meta_data = [
-                re.sub(r"\.nii(\.gz)?$", ".json", str(x)) for x in sources]
-        self.meta_data = meta_data
-        
-        self.B1_map = B1_map
-        self.T1_map = T1_map
-        
-        self.file_dep = list(itertools.chain(
-            sources, meta_data, [B1_map, T1_map]))
-        self.targets = [T2_map]
+        self.file_dep = [*sources, B1_map, T1_map]
+        self.targets = [target]
         
         self.actions = [
-            (bSSFP.t2_map, (sources, meta_data, B1_map, T1_map, T2_map))]
+            (
+                bSSFP.t2_map, (
+                    sources, flip_angles, phase_increments, repetition_time,
+                    B1_map, T1_map, target))]
     
     @staticmethod
     def t2_map(
-            source_paths, meta_data_paths, B1_map_path, T1_map_path, 
-            T2_map_path):
-       
-        # Load the meta-data
-        meta_data_array = []
-        for path in meta_data_paths:
-            with open(path) as fd:
-                meta_data_array.append(json.load(fd))
-       
+            source_paths, flip_angles, phase_increments, repetition_time, 
+            B1_map_path, T1_map_path, T2_map_path):
+        
         # Reading bSSFP meta data
-        FA = numpy.empty(len(meta_data_array)) # [rad]
-        TR = numpy.empty(len(meta_data_array)) # [s]
-        TE = numpy.empty(len(meta_data_array)) # [s]
-        phi = numpy.empty(len(meta_data_array)) # [°]
-        for index, meta_data in enumerate(meta_data_array):
-            FA[index] = numpy.radians(meta_data['FlipAngle'][0])
-            TR[index] = meta_data['RepetitionTime'][0]*1e-3
-            TE[index] = meta_data['EchoTime'][0]*1e-3
-            phi[index] = bSSFP.get_phase_increment(meta_data)
+        alpha = numpy.radians(flip_angles)
+        TR = repetition_time*1e-3
+        phi = numpy.radians(phase_increments)
         
         # Sort images and meta-data according to the pair (ϕ, FA)
         # so that we get (ϕ₁, FA₁), (ϕ₁, FA₂), (ϕ₂, FA₁), (ϕ₂, FA₂), etc.
-        for variable in [source_paths, FA, TR, TE, phi]:
-            variable[:] = [
-                item for item, _, _ in sorted(
-                    zip(variable, phi, FA), key=lambda x: (x[-2], x[-1]))]
+        order = [
+            x[0] for x in sorted(
+                zip(range(len(source_paths)), phi, flip_angles),
+                key=lambda x: (x[-2], x[-1]))]
+        for array in [source_paths, flip_angles, phi]:
+            array[:] = [array[x] for x in order]
         
         # Load the images
         sources = [nibabel.load(x) for x in source_paths]
-        B1_map = nibabel.load(B1_map_path)
-        T1_map = nibabel.load(T1_map_path)
+        rB1 = nibabel.load(B1_map_path).get_fdata()
         
-        # Clamp the B1 map
-        B1 = B1_map.get_fdata()
-        B1[B1<0.1] = numpy.nan
+        T1 = nibabel.load(T1_map_path).get_fdata()
+        T1[T1<0] = 1e-12
+        E1 = numpy.exp(-TR/T1)[None, ...]
         
         S = numpy.asarray([source.get_fdata() for source in sources])
         
-        tau = numpy.empty((S.shape[0]//2, )+S.shape[1:])
+        alpha = alpha[:, None, None, None] * rB1[None, :, :, :]
         
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            E1 = numpy.exp(-TR[0]/T1_map.get_fdata())
+        sin_alpha = numpy.sin(alpha)
+        sin_alpha[sin_alpha == 0] = 1e-12
         
-        true_FA = numpy.tensordot(FA, B1, axes=((),()))
-        tan_FA = numpy.tan(true_FA)
-        sin_FA = numpy.sin(true_FA)
+        tan_alpha = numpy.tan(alpha)
+        tan_alpha[tan_alpha == 0] = 1e-12
         
-        for i in range(0, len(S), 2):
-            # Terms of eq. 3
-            X1 = S[i] / tan_FA[i]
-            X2 = S[i+1] / tan_FA[i+1]
-            Y1 = S[i] / sin_FA[i]
-            Y2 = S[i+1] / sin_FA[i+1]
-            
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                # Slope of eq. 7
-                m = (Y2 - Y1)/(X2 - X1)
-                # Log operand of reduced T2, eq. 5
-                n = (E1-m) / (1-m*E1)
-                tau[i//2] = -TR[0]/numpy.log((E1-m) / (1-m*E1))
+        # Equation 7, regularized
+        numerator = S[0::2]/sin_alpha[0::2] - S[1::2]/sin_alpha[1::2]
+        denominator = S[0::2]/tan_alpha[0::2] - S[1::2]/tan_alpha[1::2]
+        denominator[denominator == 0] = 1e-12
+        m = numerator/denominator
         
-        # Definition below eq. 11 and in eq. 12
-        K_N = numpy.sqrt(8/(3*tau.shape[0]))
-        T2 = K_N * numpy.sqrt(numpy.nansum(tau**2, axis=0))
+        # Equation 4, WARNING complex data possible
+        tau_2 = -TR / numpy.log((E1-m) / (1 - m*E1))
         
-        # Clamp the results to avoid large errors outside the object
-        T2[T2<0] = 0
-        T2[T2>10] = 10
+        # Below equation 11
+        K_N = numpy.sqrt(8/(3*len(source_paths)/2))
         
-        nibabel.save(nibabel.Nifti1Image(T2, sources[0].affine), T2_map_path)
-    
-    @staticmethod
-    def get_phase_increment(meta_data):
-        """ Read the phase increment from the private data. """    
+        # Equation 11
+        T2_RSS = K_N * numpy.sqrt(numpy.nansum(tau_2**2, axis=0))
         
-        csa_group = misc.siemens_csa.find_csa_group(meta_data) or 0x00291000
-        csa = dicomifier.dicom_to_nifti.siemens.parse_csa(
-            base64.b64decode(meta_data["{:08x}".format(csa_group+0x20)][0]))
-        protocol = csa["MrPhoenixProtocol"][0]
-        
-        phase_increment = float(
-            re.search(
-                br"^sWiPMemBlock.alFree\[5\]\s*=\s*(\S+)$", protocol, re.M
-            ).group(1))
-        
-        return phase_increment
+        nibabel.save(
+            nibabel.Nifti1Image(T2_RSS, sources[0].affine),
+            T2_map_path)
 
 def main():
     return entrypoint(
         bSSFP, [
+            ("--sources", {"nargs": "+", "help": "Source images"}),
+            parsing.FlipAngles,
             (
-                "sources", {
-                    "nargs": "+", 
-                    "help": "bSSFP images with different phase steps increments"}),
-            ("B1_map", {"help": "B1 map in bSSFP space"}),
-            ("T1_map", {"help": "T1 map in bSSFP space"}),
-            ("T2_map", {"help": "Path to the target T2 map"})])
+                "--phase-increments", {
+                    "nargs": "+", "type": float,
+                    "help": "Phase increment for each bSSFP image (°)"}),
+            parsing.RepetitionTime,
+            ("--B1-map", "--b1-map", {"help": "B1 map in bSSFP space"}),
+            ("--T1-map", "--t1-map", {"help": "T1 map in bSSFP space"}),
+            ("--target", {"help": "Target T2 map"})])

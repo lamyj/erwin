@@ -1,12 +1,7 @@
-import json
-import re
-
-import meg
 import nibabel
-import numpy
 import spire
 
-from .. import entrypoint
+from .. import entrypoint, parsing
 
 class R2Star(spire.TaskFactory):
     """ Compute the R2* map (in Hz)
@@ -16,25 +11,22 @@ class R2Star(spire.TaskFactory):
         Magnetic Resonance in Medicine 73(2). 2015.
     """
     
-    def __init__(self, source, target, medi_toolbox, meta_data=None):
+    def __init__(self, source, echo_times, target, medi_toolbox):
         spire.TaskFactory.__init__(self, str(target))
         
-        if meta_data is None:
-            meta_data = re.sub(r"\.nii(\.gz)?$", ".json", str(source))
-        
-        self.file_dep = [source, meta_data]
+        self.file_dep = [source]
         self.targets = [target]
         
         self.actions = [
-            (R2Star.arlo, (source, meta_data, medi_toolbox, target))]
+            (R2Star.arlo, (source, echo_times, medi_toolbox, target))]
     
     @staticmethod
-    def arlo(source_path, meta_data_path, medi_toolbox_path, target_path):
+    def arlo(source_path, echo_times, medi_toolbox_path, target_path):
+        import meg
+        
         source = nibabel.load(source_path)
         
-        with open(meta_data_path) as fd:
-            meta_data = json.load(fd)
-        echo_times = [x[0]*1e-3 for x in meta_data["EchoTime"]]
+        echo_times = [x[0]*1e-3 for x in echo_times]
         
         with meg.Engine() as engine:
             engine(f"run('{medi_toolbox_path}/MEDI_set_path.m');")
@@ -48,15 +40,10 @@ class R2Star(spire.TaskFactory):
 def main():
     return entrypoint(
         R2Star, [
-            ("source", {"help": "Multi-echo magnitude image"}),
-            ("target", {"help": "R2* image"}),
+            ("--source", {"help": "Multi-echo magnitude image"}),
+            parsing.EchoTimes,
+            ("--target", {"help": "R2* image"}),
             (
                 "--medi", {
-                    "required": True, 
                     "dest": "medi_toolbox", 
-                    "help": "Path to the MEDI toolbox"}),
-            (
-                "--meta-data", "-m", {
-                    "help": 
-                        "Optional meta-data. If not provided, deduced from the "
-                        "source image."})])
+                    "help": "Path to the MEDI toolbox"})])

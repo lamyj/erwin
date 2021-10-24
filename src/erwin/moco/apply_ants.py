@@ -70,10 +70,10 @@ class ApplyAnts(spire.TaskFactory):
 def main():
     return entrypoint(
         ApplyAnts, [
-            ("time_series", {"help": "Source time series"}),
-            ("transforms", {"help": "4D motion-correction transform image"}),
+            ("--time_series", {"help": "Source time series"}),
+            ("--transforms", {"help": "4D motion-correction transform image"}),
             (
-                "reference", 
+                "--reference", 
                 {"help": "Reference time-series defining the geometry"}),
-            ("target", {"help": "Target time series"})
+            ("--target", {"help": "Target time series"})
         ])

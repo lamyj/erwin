@@ -13,6 +13,8 @@ class SliceTimeSiemens(spire.TaskFactory):
     """ Create a slice-time image from Siemens private data.
     """
     
+    # FIXME
+    
     def __init__(self, source, target, meta_data=None):
         spire.TaskFactory.__init__(self, str(target))
         

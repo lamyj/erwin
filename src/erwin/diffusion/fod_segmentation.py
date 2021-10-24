@@ -1,10 +1,9 @@
 import os
 import spire
-from .. import entrypoint
+from .. import entrypoint, parsing
 
 class FODSegmentation(spire.TaskFactory):
-    """ Segmentation of continuous Fibre Orientation Distributions 
-        to discrete fixels.
+    """ Segmentation of Fibre Orientation Distributions to fixels.
         
         This wraps fod2fixel from MRtrix3.
     """
@@ -31,8 +30,9 @@ class FODSegmentation(spire.TaskFactory):
 def main():
     return entrypoint(
         FODSegmentation, [
-            ("fod", {"help": "FOD image"}),
-            ("fixel_directory", {"help": "Target fixel directory"}),
-            ("--afd", {"help": "Apparent fiber density map"}),
-            ("--peak-amp", {"help": "Map of the maximal FOD peak"}),
-            ("--disp", {"help": "Dispersion map"})])
+            ("--fod", {"help": "FOD image"}),
+            ("--fixel-directory", {"help": "Target fixel directory"}),
+            parsing.Optional(["--afd", {"help": "Apparent fiber density map"}]),
+            parsing.Optional(
+                ["--peak-amp", {"help": "Map of the maximal FOD peak"}]),
+            parsing.Optional(["--disp", {"help": "Dispersion map"}])])

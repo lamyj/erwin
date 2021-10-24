@@ -1,6 +1,6 @@
 import spire
 
-from .. import entrypoint
+from .. import entrypoint, parsing
 
 class BZero(spire.TaskFactory):
     """ Extraction and optional average of b=0 s/mm^2 images from DWI data.
@@ -20,7 +20,9 @@ class BZero(spire.TaskFactory):
 def main():
     return entrypoint(
         BZero, [
-            ("source", {"help": "DWI data set"}),
-            ("target", {"help": "Target b=0 image"}),
-            ("--average", {
-                "action": "store_true", "help": "Apparent fiber density map"})])
+            ("--source", {"help": "DWI data set"}),
+            ("--target", {"help": "Target 4D image of all b=0 volumes"}),
+            parsing.Optional([
+                "--average", {
+                    "action": "store_true",
+                    "help": "Average of all b=0 volumes"}])])

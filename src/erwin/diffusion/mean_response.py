@@ -19,6 +19,6 @@ class MeanResponse(spire.TaskFactory):
 def main():
     return entrypoint(
         MeanResponse, [
-            ("sources", {"nargs": "+", "help": "Source responses"}),
-            ("target", {"help": "Target average response"})
+            ("--sources", {"nargs": "+", "help": "Source responses"}),
+            ("--target", {"help": "Target average response"})
         ])

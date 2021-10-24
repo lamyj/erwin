@@ -1,6 +1,6 @@
 import spire
 
-from .. import entrypoint
+from .. import entrypoint, parsing
 
 class TensorMetric(spire.TaskFactory):
     """ Maps of tensor-derived parameters
@@ -24,14 +24,14 @@ class TensorMetric(spire.TaskFactory):
 def main():
     return entrypoint(
         TensorMetric, [
-            ("source", {"help": "Source DWI image"}),
+            ("--source", {"help": "Source DWI image"}),
             (
-                "kind", {
+                "--kind", {
                     "choices": ["adc", "fa", "ad", "rd", "value", "vector"], 
                     "help": "Metric kind"}),
-            ("target", {"help": "Target diffusion tensor image"}),
-            (
+            ("--target", {"help": "Target diffusion tensor image"}),
+            parsing.Optional([
                 "--num", {
-                    "type": "int", "help": "Desired eigenvalue or eigenvector"}),
-            ("--mask", {"help": "Binary mask"})
+                    "type": int, "help": "Desired eigenvalue or eigenvector"}]),
+            parsing.Optional(["--mask", {"help": "Binary mask"}])
         ])

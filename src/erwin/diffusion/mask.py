@@ -18,5 +18,5 @@ class Mask(spire.TaskFactory):
 def main():
     return entrypoint(
         Mask, [
-            ("source", {"help": "Diffusion-weighted image"}),
-            ("target", {"help": "Path to the target mask"})])
+            ("--source", {"help": "Diffusion-weighted image"}),
+            ("--target", {"help": "Path to the target mask"})])

@@ -47,5 +47,5 @@ class Preprocessing(spire.TaskFactory):
 def main():
     return entrypoint(
         Preprocessing, [
-            ("source", {"help": "Diffusion-weighted image"}),
-            ("target", {"help": "Path to the target preprocessed DWI image"})])
+            ("--source", {"help": "Diffusion-weighted image"}),
+            ("--target", {"help": "Path to the target preprocessed DWI image"})])

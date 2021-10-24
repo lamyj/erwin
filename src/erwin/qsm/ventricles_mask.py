@@ -1,4 +1,3 @@
-import meg
 import nibabel
 import spire
 
@@ -16,6 +15,8 @@ class VentriclesMask(spire.TaskFactory):
 
     @staticmethod
     def mask(r2_star_path, mask_path, medi_toolbox_path, target_path):
+        import meg
+        
         r2_star = nibabel.load(r2_star_path)
         mask = nibabel.load(mask_path)
         
@@ -32,11 +33,10 @@ class VentriclesMask(spire.TaskFactory):
 def main():
     return entrypoint(
         VentriclesMask, [
-            ("r2_star", {"help": "R2* image"}),
-            ("mask", {"help": "Mask image"}),
-            ("target", {"help": "Ventricles mask"}),
+            ("--r2-star", {"help": "R2* image"}),
+            ("--mask", {"help": "Mask image"}),
+            ("--target", {"help": "Ventricles mask"}),
             (
                 "--medi", {
-                    "required": True, 
                     "dest": "medi_toolbox", 
                     "help": "Path to the MEDI toolbox"})])

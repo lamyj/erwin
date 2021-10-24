@@ -6,7 +6,7 @@ import tempfile
 
 import spire
 
-from .. import entrypoint
+from .. import entrypoint, parsing
 
 class BET(spire.TaskFactory):
     """ Brain extration using BET from FSL.
@@ -112,37 +112,39 @@ class BET(spire.TaskFactory):
 def main():
     return entrypoint(
         BET, [
-            ("source", {"help": "Source image"}),
-            ("target", {"help": "Target brain image"}),
-            ("--mask", {"help": "Target brain mask"}),
-            ("--skull", {"help": "Target skull mask"}),
-            (
+            ("--source", {"help": "Source image"}),
+            ("--target", {"help": "Target brain image"}),
+            parsing.Optional(["--mask", {"help": "Target brain mask"}]),
+            parsing.Optional(["--skull", {"help": "Target skull mask"}]),
+            parsing.Optional([
                 "--no-brain", {
                     "action": "store_false", "dest": "brain",
-                    "help": "Don't store the brain image"}),
-            (
+                    "help": "Don't store the brain image"}]),
+            parsing.Optional([
                 "--threshold", {
                     "help": "Fractional intensity threshold", "type": float, 
-                    "dest": "fractional_intensity_threshold"}),
-            (
+                    "dest": "fractional_intensity_threshold"}]),
+            parsing.Optional([
                 "--gradient", {
                     "help": "Vertical gradient", "type": float, 
-                    "dest": "vertical_gradient"}),
-            ("--radius", {"help": "Initial radius (mm)", "type": float}),
-            (
+                    "dest": "vertical_gradient"}]),
+            parsing.Optional(
+                ["--radius", {"help": "Initial radius (mm)", "type": float}]),
+            parsing.Optional([
                 "--cog", {
                     "help": "Center of gravity (voxels, as 'x,y,z')", 
                     "type": lambda x: [float(x) for x in x.split(",")],
-                    "dest": "center_of_gravity"}),
-            (
+                    "dest": "center_of_gravity"}]),
+            parsing.Optional([
                 "--thresholding", {
                     "help": "Apply thresholding to segmented brain image and mask",
-                    "action": "store_true"}),
-            ("--mesh", {"help": "Target brain mesh", "dest": "brain_mesh"}),
-            (
+                    "action": "store_true"}]),
+            parsing.Optional(
+                ["--mesh", {"help": "Target brain mesh", "dest": "brain_mesh"}]),
+            parsing.Optional([
                 "--variant", {
                     "help": "Variations on default bet2 functionality", 
                     "choices": [
                         "robust", "optic", "neck", "small_fov", "fmri", 
-                        "additionnal_surfaces"]})
+                        "additionnal_surfaces"]}])
             ])

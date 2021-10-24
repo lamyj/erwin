@@ -15,14 +15,7 @@ def entrypoint(class_, arguments):
         help="Set the verbosity level (defaults to \"warning\")")
     
     for entry in arguments:
-        if len(entry) == 2:
-            name, options = entry
-            parser.add_argument(name, **options)
-        elif len(entry) == 3:
-            long_name, short_name, options = entry
-            parser.add_argument(long_name, short_name, **options)
-        else:
-            raise Exception("Invalid argument specification")
+        parsing.add_argument(parser, entry)
     arguments = vars(parser.parse_args())
     
     logging.getLogger().setLevel(
@@ -43,6 +36,6 @@ def entrypoint(class_, arguments):
             raise
 
 from . import (
-    b0_map, b1_map, cbf, diffusion, misc, moco, mt_map, qsm, segmentation,
-    t1_map, t2_map
+    b0_map, b1_map, cbf, diffusion, misc, moco, mt_map, parsing, qsm,
+    segmentation, t1_map, t2_map
 )

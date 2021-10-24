@@ -2,7 +2,7 @@ import nibabel
 import numpy
 import spire
 
-from .. import entrypoint
+from .. import entrypoint, parsing
 
 class TimeToRate(spire.TaskFactory):
     """ Convert a relaxation time to a relaxation rate.
@@ -27,9 +27,9 @@ class TimeToRate(spire.TaskFactory):
 def main():
     return entrypoint(
         TimeToRate, [
-            ("source", {"help": "Source time map"}),
-            ("destination", {"help": "Target rate map"}),
-            (
+            ("--source", {"help": "Source time map"}),
+            ("--destination", {"help": "Target rate map"}),
+            parsing.Optional([
                 "--range", {
                     "help": "Clip range",
-                    "type": lambda x: [float(y) for y in x.split(",")]})])
+                    "type": lambda x: [float(y) for y in x.split(",")]}])])

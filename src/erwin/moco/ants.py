@@ -43,6 +43,6 @@ class Ants(spire.TaskFactory):
 def main():
     return entrypoint(
         Ants, [
-            ("source", {"help": "Source time-series image"}),
-            ("prefix", {"help": "Prefix of the target response files"}),
+            ("--source", {"help": "Source time-series image"}),
+            ("--prefix", {"help": "Prefix of the target response files"}),
         ])

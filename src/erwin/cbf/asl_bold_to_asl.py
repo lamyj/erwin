@@ -1,11 +1,8 @@
-import json
-import re
-
 import nibabel
 import numpy
 import spire
 
-from .. import entrypoint
+from .. import entrypoint, parsing
 
 class ASLBOLDToASL(spire.TaskFactory):
     """ Separate ASL signal from ASL-BOLD based on Fourier analysis.
@@ -18,27 +15,22 @@ class ASLBOLDToASL(spire.TaskFactory):
           stages. Roquet et al. Alzheimer's Research & Therapy 8(1). 2016.
     """
     
-    def __init__(self, source, target, meta_data=None, cutoff_frequency=0.1125):
+    def __init__(self, source, repetition_time, target, cutoff_frequency=0.1125):
         spire.TaskFactory.__init__(self, str(target))
         
         self.file_dep = [source]
         self.targets = [target]
         
-        if meta_data is None:
-            meta_data = re.sub(r"\.nii(\.gz)?$", ".json", str(source))
-        
         self.actions = [
             (
                 ASLBOLDToASL.filter, 
-                (source, meta_data, cutoff_frequency, target))]
+                (source, repetition_time, cutoff_frequency, target))]
     
-    def filter(source_path, meta_data_path, cutoff_frequency, target_path):
+    def filter(source_path, repetition_time, cutoff_frequency, target_path):
         source = nibabel.load(source_path)
         
         # Get repetition time
-        with open(meta_data_path) as fd:
-            meta_data = json.load(fd)
-        TR = meta_data["RepetitionTime"][0] * 1e-3
+        TR = repetition_time * 1e-3
         
         # Build the frequencies array and the stop-band based on the TR
         # NOTE: the first volume does not have the inversion pulses and must not
@@ -61,15 +53,11 @@ class ASLBOLDToASL(spire.TaskFactory):
 def main():
     return entrypoint(
         ASLBOLDToASL, [
-            ("source", {"help": "Source ASL-BOLD image"}),
-            ("target", {"help": "Target ASL image"}),
-            (
-                "--meta_data", "-m", 
-                {
-                    "help": 
-                        "Optional meta-data. If not provided, deduced from the "
-                        "source image."}),
-            (
-                "--cutoff-frequency", 
-                {"help": "Cut-off frequency", "type": float, "default": 0.1125})
+            ("--source", {"help": "Source ASL-BOLD image"}),
+            parsing.RepetitionTime,
+            ("--target", {"help": "Target ASL image"}),
+            parsing.Optional([
+                "--cutoff-frequency", {
+                    "help": "Cut-off frequency (Hz)", "type": float,
+                    "default": 0.1125}])
         ])

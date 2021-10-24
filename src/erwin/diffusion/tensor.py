@@ -1,6 +1,6 @@
 import spire
 
-from .. import entrypoint
+from .. import entrypoint, parsing
 
 class Tensor(spire.TaskFactory):
     """ Diffusion and optional kurtosis tensor estimation.
@@ -28,10 +28,17 @@ class Tensor(spire.TaskFactory):
 def main():
     return entrypoint(
         Tensor, [
-            ("source", {"help": "Source DWI image"}),
-            ("target", {"help": "Target diffusion tensor image"}),
-            ("--mask", {"help": "Binary mask"}),
-            ("--dkt", {"help": "Target diffusion kurtosis image"}),
-            ("--ols", {"action": "store_true", "help": "Perform initial fit with OLS"}),
-            ("--iter", {"help": "Number of iterative reweightings"}),
-            ("--b0", {"help": "Target estimated b=0 s/mm² image"})])
+            ("--source", {"help": "Source DWI image"}),
+            ("--target", {"help": "Target diffusion tensor image"}),
+            parsing.Optional(["--mask", {"help": "Binary mask"}]),
+            parsing.Optional(
+                ["--dkt", {"help": "Target diffusion kurtosis image"}]),
+            parsing.Optional(
+                [
+                    "--ols", {
+                        "action": "store_true",
+                        "help": "Perform initial fit with OLS"}]),
+            parsing.Optional(
+                ["--iter", {"help": "Number of iterative reweightings"}]),
+            parsing.Optional(
+                ["--b0", {"help": "Target estimated b=0 s/mm² image"}])])

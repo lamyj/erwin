@@ -1,7 +1,6 @@
 import json
 import re
 
-import meg
 import nibabel
 import numpy
 import spire
@@ -9,19 +8,13 @@ import spire
 from .. import entrypoint
 
 class TotalField(spire.TaskFactory):
-    """ Compute the unwrapped total susceptibility field using the PDF and
-        region-growing phase unwrapping of the MEDI toolbox.
+    """ Unwrapping and total susceptibility field of the MEDI toolbox.
     """
     
-    def __init__(
-            self, magnitude, phase, f_total, medi_toolbox, 
-            phase_meta_data=None, sd_noise=None):
+    def __init__(self, magnitude, phase, f_total, medi_toolbox, sd_noise=None):
         spire.TaskFactory.__init__(self, str(f_total))
         
-        if phase_meta_data is None:
-            phase_meta_data = re.sub(r"\.nii(\.gz)?$", ".json", str(phase))
-        
-        self.file_dep = [magnitude, phase, phase_meta_data]
+        self.file_dep = [magnitude, phase]
         self.targets = [f_total]
         if sd_noise is not None:
             self.targets.append(sd_noise)
@@ -29,29 +22,17 @@ class TotalField(spire.TaskFactory):
         self.actions = [
             (
                 TotalField.total_field, (
-                    magnitude, phase, phase_meta_data, medi_toolbox, 
-                    f_total, sd_noise))]
+                    magnitude, phase, medi_toolbox, f_total, sd_noise))]
     
     def total_field(
-            magnitude_path, phase_path, phase_meta_data_path, 
-            medi_toolbox_path, f_total_path, sd_noise_path):
+            magnitude_path, phase_path, medi_toolbox_path, f_total_path,
+            sd_noise_path):
+        
+        import meg
+        
         magnitude_image = nibabel.load(magnitude_path)
         phase_image = nibabel.load(phase_path)
-        
-        try:
-            with open(phase_meta_data_path) as fd:
-                phase_meta_data = json.load(fd)
-        except FileNotFoundError:
-            phase_meta_data = None
-        
-        phase = phase_image.get_fdata()
-        if (
-                phase_meta_data is not None
-                and phase_meta_data["ImageType"][2] == "P" 
-                and phase_meta_data["Manufacturer"][0] == "SIEMENS"):
-            phase *= numpy.pi / 4096
-        
-        signal = magnitude_image.get_fdata() * numpy.exp(-1j*phase)
+        signal = magnitude_image.get_fdata() * numpy.exp(-1j*phase_image.get_fdata())
         
         with meg.Engine() as engine:
             engine(f"run('{medi_toolbox_path}/MEDI_set_path.m');")
@@ -79,17 +60,11 @@ class TotalField(spire.TaskFactory):
 def main():
     return entrypoint(
         TotalField, [
-            ("magnitude", {"help": "Multi-echo magnitude image"}),
-            ("phase", {"help": "Multi-echo phase image"}),
-            ("f_total", {"help": "Total field image"}),
-            ("sd_noise", {"nargs": "?", "help": "Total field image"}),
+            ("--magnitude", {"help": "Multi-echo magnitude image"}),
+            ("--phase", {"help": "Multi-echo phase image"}),
+            ("--f-total", {"help": "Total field image"}),
+            ("--sd-noise", {"nargs": "?", "help": "Total field image"}),
             (
                 "--medi", {
-                    "required": True, 
                     "dest": "medi_toolbox", 
-                    "help": "Path to the MEDI toolbox"}),
-            (
-                "--meta-data", "-m", {
-                    "help": 
-                        "Optional phase meta-data. If not provided, deduced "
-                        "from the phase image."})])
+                    "help": "Path to the MEDI toolbox"})])
