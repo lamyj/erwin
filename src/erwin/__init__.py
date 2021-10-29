@@ -36,6 +36,6 @@ def entrypoint(class_, arguments):
             raise
 
 from . import (
-    b0_map, b1_map, cbf, diffusion, misc, moco, mt_map, parsing, qsm,
+    b0_map, b1_map, cbf, diffusion, meta_data, misc, moco, mt_map, parsing, qsm,
     segmentation, t1_map, t2_map
 )
