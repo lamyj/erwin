@@ -27,7 +27,7 @@ class BackgroundFieldRemoval(spire.TaskFactory):
         mask_image = nibabel.load(mask_path)
         
         with meg.Engine() as engine:
-            engine(f"run('{medi_toolbox_path}/MEDI_set_path.m');")
+            engine("run('{}/MEDI_set_path.m');".format(medi_toolbox_path))
             
             engine["f_total"] = f_total_image.get_fdata()
             engine["mask"] = numpy.array(mask_image.dataobj)

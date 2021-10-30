@@ -29,7 +29,7 @@ class R2Star(spire.TaskFactory):
         echo_times = [x[0]*1e-3 for x in echo_times]
         
         with meg.Engine() as engine:
-            engine(f"run('{medi_toolbox_path}/MEDI_set_path.m');")
+            engine("run('{}/MEDI_set_path.m');".format(medi_toolbox_path))
             engine["echo_times"] = echo_times
             engine["magnitude"] = source.get_fdata()
             engine("R2_star = arlo(echo_times, magnitude);")

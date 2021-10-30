@@ -21,7 +21,7 @@ class VentriclesMask(spire.TaskFactory):
         mask = nibabel.load(mask_path)
         
         with meg.Engine() as engine:
-            engine(f"run('{medi_toolbox_path}/MEDI_set_path.m');")
+            engine("run('{}/MEDI_set_path.m');".format(medi_toolbox_path))
             engine["r2_star"] = r2_star.get_fdata()
             engine["mask"] = mask.get_fdata()
             engine["voxel_size"] = r2_star.header["pixdim"][1:1+r2_star.ndim]

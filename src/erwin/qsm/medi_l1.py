@@ -52,7 +52,7 @@ class MediL1(spire.TaskFactory):
         imaging_frequency = 1e6 * imaging_frequency
         
         with meg.Engine() as engine:
-            engine(f"run('{medi_toolbox_path}/MEDI_set_path.m');")
+            engine("run('{}/MEDI_set_path.m');".format(medi_toolbox_path))
             
             # file must contain
             engine["iMag"] = magnitude.get_fdata().sum(axis=-1)
@@ -71,15 +71,19 @@ class MediL1(spire.TaskFactory):
             
             RDF_mat = os.path.join(os.path.dirname(target_path), "RDF.mat")
             engine(
-                "save("
-                    f"'{RDF_mat}', 'RDF', 'iFreq', 'iMag', 'N_std', "
-                    "'Mask', 'matrix_size', 'voxel_size', 'delta_TE', 'CF', "
-                    "'B0_dir', 'Mask_CSF');")
+                (
+                    "save("
+                        "'{}', 'RDF', 'iFreq', 'iMag', 'N_std', "
+                        "'Mask', 'matrix_size', 'voxel_size', 'delta_TE', 'CF', "
+                        "'B0_dir', 'Mask_CSF');"
+                ).format(RDF_mat))
             
             engine(
-                "QSM = MEDI_L1("
-                    f"'filename', '{RDF_mat}', "
-                    "'lambda', 1000, 'lambda_CSF', 100, 'merit', 'smv', 5);")
+                (
+                    "QSM = MEDI_L1("
+                        "'filename', '{}', "
+                        "'lambda', 1000, 'lambda_CSF', 100, 'merit', 'smv', 5);"
+                ).format(RDF_mat))
             
             os.unlink(RDF_mat)
             

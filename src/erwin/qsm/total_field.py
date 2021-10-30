@@ -35,7 +35,7 @@ class TotalField(spire.TaskFactory):
         signal = magnitude_image.get_fdata() * numpy.exp(-1j*phase_image.get_fdata())
         
         with meg.Engine() as engine:
-            engine(f"run('{medi_toolbox_path}/MEDI_set_path.m');")
+            engine("run('{}/MEDI_set_path.m');".format(medi_toolbox_path))
             
             engine["signal"] = signal
             # MEDI toolbox expects shape as a floating point array
