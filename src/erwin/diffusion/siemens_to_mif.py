@@ -9,7 +9,7 @@ import dicomifier
 import numpy
 import spire
 
-from .. import entrypoint
+from .. import entrypoint, parsing
 
 class SiemensToMIF(spire.TaskFactory):
     """ Convert DWI data from Siemens to MIF format.
@@ -107,8 +107,8 @@ class SiemensToMIF(spire.TaskFactory):
 def main():
     return entrypoint(
         SiemensToMIF, [
+            parsing.Multiple([
+                "--sources", {"help": "Diffusion-weighted image"}]),
             (
-                "sources", {
-                    "nargs": "+", "metavar": "source", 
-                    "help": "Diffusion-weighted image"}),
-            ("target", {"help": "Path to the target DWI image in MIF format"})])
+                "--target",
+                {"help": "Path to the target DWI image in MIF format"})])

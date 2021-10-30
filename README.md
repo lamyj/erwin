@@ -22,7 +22,7 @@ python3 -m pip install erwin
 ```
 
 Using the following methods requires additional dependencies:
-- Diffusion tensor and spherical harmonics: MRtrix
+- Diffusion tensor and spherical harmonics: MRtrix; conversion from Bruker or Siemens DICOM also requires Dicomifier
 - Motion correction: ANTs
 - NODDI: Amico
 - QSM: MEDI

@@ -107,5 +107,7 @@ class BrukerToMIF(spire.TaskFactory):
 def main():
     return entrypoint(
         BrukerToMIF, [
-            ("source", {"help": "Diffusion-weighted image"}),
-            ("target", {"help": "Path to the target DWI image in MIF format"})])
+            ("--source", {"help": "Diffusion-weighted image"}),
+            (
+                "--target",
+                {"help": "Path to the target DWI image in MIF format"})])
