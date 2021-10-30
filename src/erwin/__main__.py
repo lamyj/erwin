@@ -2,6 +2,7 @@ import importlib
 import inspect
 import re
 import os
+import shutil
 import sys
 import textwrap
 import unittest.mock
@@ -61,18 +62,28 @@ def list():
                 doc = getattr(value, "main")()
                 modules.append([full_name[1+len(package):], doc])
     
-    max_name_length = max([len(x[0]) for x in modules])
-    doc_width = min(110, os.get_terminal_size()[0]) - max_name_length - 1
+    max_name_length = max([len(x[0].split(".", 1)[1]) for x in modules])
+    doc_width = min(110, shutil.get_terminal_size()[0]) - max_name_length - 1
     
+    current_package_name = None
     modules.sort(key=lambda x: x[0])
     for name, doc in modules:
+        package_name, module_name = name.split(".", 1)
+        if current_package_name != package_name:
+            print(
+                "{}{}{}".format(
+                    package_name, (max_name_length-len(package_name)+3)*" ",
+                    get_doc(
+                        sys.modules["{}.{}".format(package, package_name)],
+                        None)))
+            current_package_name = package_name
         doc_lines = textwrap.wrap(doc, doc_width)
         print(
-            "{}{}{}".format(
-                name, (max_name_length-len(name)+1)*" ", doc_lines[0]))
+            "  {}{}  {}".format(
+                module_name, (max_name_length-len(module_name)+1)*" ",
+                doc_lines[0]))
         for doc_line in doc_lines[1:]:
             print("{}{}".format((max_name_length+1)*" ", doc_line))
-        print()
 
 def run(module_name, arguments):
     """ Run the specified module with its arguments.
@@ -100,7 +111,7 @@ def get_doc(class_, _):
     """ Return the first paragraph of the specified class docstring.
     """
     
-    paragraph = re.split("^\s*$", class_.__doc__.strip(), flags=re.MULTILINE)[0]
+    paragraph = re.split("^\s*$", (class_.__doc__ or "").strip(), flags=re.MULTILINE)[0]
     paragraph = re.sub("\s+", " ", paragraph)
     return paragraph
 
