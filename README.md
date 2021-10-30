@@ -4,10 +4,10 @@
 
 - Field mapping: relative B<sub>0</sub> and relative B<sub>1</sub> 
 - Cerebral blood flow: <abbr title="Arterial Spin Labelling">ASL</abbr>-based models (pulsed ASL, pseudo-continuous ASL)
-- Diffusion: DTI and spherical harmonics (MRtrix), NODDI (Amico)
-- Motion correction: based on ANTs
+- Diffusion: DTI and spherical harmonics, NODDI
+- Motion correction
 - Magnetization transfer: MTR and single-point qMT
-- Susceptibility: QSM and R<sub>2</sub><sup>*</sup> based on the MEDI toolbox
+- Magnetic susceptibility: QSM and R<sub>2</sub><sup>*</sup>
 - T<sub>1</sub> and T<sub>2</sub> mapping: VFA, bSSFP, pSSFP
 
 Since quantitative MRI requires accessing acquisition parameters, often stored in vendor-specific meta-data, *erwin* includes tools to access meta-data in a vendor-neutral way.
@@ -16,16 +16,16 @@ Using doit and Spire, *erwin* allows the definition of complex pipelines with au
 
 ## Installation
 
-*erwin* requires Python ≥ 3.5 The easiest way to install *erwin* and its dependencies is through PyPi and pip (the `python3` executable may need to be adjusted to fit your local installation):
+*erwin* requires Python ≥ 3.5 The easiest way to install *erwin* and its dependencies is through [PyPi][] and [pip][] (the `python3` executable may need to be adjusted to fit your local installation):
 ```
 python3 -m pip install erwin
 ```
 
 Using the following methods requires additional dependencies:
-- Diffusion tensor and spherical harmonics: MRtrix; conversion from Bruker or Siemens DICOM also requires Dicomifier
-- Motion correction: ANTs
-- NODDI: Amico
-- QSM: MEDI
+- Diffusion tensor and spherical harmonics: [MRtrix][]; conversion from Bruker or Siemens DICOM also requires [Dicomifier][]
+- Motion correction: [ANTs][]
+- NODDI: [Amico][]
+- QSM: [MEDI][]
 
 ## Command-line usage
 
@@ -70,3 +70,11 @@ phase = nibabel.load("/path/to/phase.nii.gz")
 ```
 
 **TODO** Sample T2 pipeline
+
+[Amico]: https://github.com/daducci/AMICO
+[ANTs]: https://github.com/ANTsX/ANTs
+[Dicomifier]: https://dicomifier.readthedocs.io/
+[MEDI]: http://pre.weill.cornell.edu/mri/pages/qsm.html
+[MRtrix]: https://www.mrtrix.org/
+[pip]: https://pip.pypa.io/en/stable/
+[PyPi]: https://pypi.org/
