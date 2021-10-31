@@ -9,28 +9,29 @@ long_description = open(os.path.join(here, "README.md")).read()
 
 setuptools.setup(
     name="erwin",
+    version="0.0.0",
     
     description="Toolbox to generate quantitative maps from MRI images",
     long_description=long_description,
     long_description_content_type="text/markdown",
     
-    url="https://iris.icube.unistra.fr/gitlab/mondino/qmri_toolbox",
+    url="https://github.com/lamyj/erwin",
     
     author="J. Lamy, M. Mondino, P. Loureiro de Sousa",
     maintainer="Julien Lamy",
     maintainer_email="lamy@unistra.fr",
     
-    license="Other/Proprietary License",
+    license="MIT",
     
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         
         "Environment :: Console",
         
         "Intended Audience :: Healthcare Industry",
         "Intended Audience :: Science/Research",
         
-        "License :: Other/Proprietary License",
+        "License :: OSI Approved :: MIT License",
         
         "Programming Language :: Python :: 3",
         
@@ -55,12 +56,8 @@ setuptools.setup(
             "erwin.mt_map.mpf", ["src/erwin/mt_map/mpf.pyx"])
     ]),
     
-    python_requires=">=3.5.*,",
+    python_requires=">=3.5",
     
-    setup_requires=["setuptools_scm"],
-    use_scm_version=True,
-    
-    # FIXME: dicomifier, MEDI toolbox
     install_requires=[
         "cython", "dmri-amico", "doit", "meg", "nibabel", "numpy", "scipy",
         "spire-pipeline>=1.1.1", "sycomore"],
