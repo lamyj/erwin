@@ -9,7 +9,7 @@ long_description = open(os.path.join(here, "README.md")).read()
 
 setuptools.setup(
     name="erwin",
-    version="0.0.0",
+    version="1.0.0-pre1",
     
     description="Toolbox to generate quantitative maps from MRI images",
     long_description=long_description,
