@@ -1,11 +1,22 @@
+import distutils.command.build
 import os
 
-import Cython.Build
 import setuptools
 
 here = os.path.abspath(os.path.dirname(__file__))
 
 long_description = open(os.path.join(here, "README.md")).read()
+
+mpf_extension = setuptools.Extension(
+    name="erwin.mt_map.mpf", sources=["src/erwin/mt_map/mpf.pyx"])
+
+class build(distutils.command.build.build):
+    def finalize_options(self):
+        import Cython.Build
+        
+        super().finalize_options()
+        self.distribution.ext_modules = Cython.Build.cythonize(
+            [mpf_extension], language_level=3)
 
 setuptools.setup(
     name="erwin",
@@ -51,14 +62,13 @@ setuptools.setup(
     
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
-    ext_modules=Cython.Build.cythonize([
-        setuptools.Extension(
-            "erwin.mt_map.mpf", ["src/erwin/mt_map/mpf.pyx"])
-    ]),
+    ext_modules=[mpf_extension],
     
     python_requires=">=3.6",
     
     setup_requires=["cython"],
+    cmdclass={"build": build},
+    
     install_requires=[
         "cython", "dmri-amico", "doit", "meg", "nibabel", "numpy", "pydicom",
         "scipy", "spire-pipeline>=1.1.1", "sycomore"],
