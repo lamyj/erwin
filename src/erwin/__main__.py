@@ -7,6 +7,8 @@ import sys
 import textwrap
 import unittest.mock
 
+from . import entrypoint
+
 def main():
     return_code = 0
     
@@ -45,7 +47,10 @@ def list():
         module = stack.pop()
         scanned.add(id(module))
         for name, value in module.__dict__.items():
-            if not inspect.ismodule(value) or not value.__package__.startswith(package):
+            if (
+                    not inspect.ismodule(value)
+                    or not value.__package__.startswith(package)
+                    or name == "__main__"):
                 continue
             if id(value) in scanned:
                 continue
