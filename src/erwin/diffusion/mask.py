@@ -1,5 +1,3 @@
-import argparse
-
 import spire
 
 from .. import entrypoint

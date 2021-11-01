@@ -1,8 +1,3 @@
-import base64
-import json
-import re
-
-import dicomifier
 import nibabel
 import numpy
 import spire
