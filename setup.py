@@ -56,8 +56,9 @@ setuptools.setup(
             "erwin.mt_map.mpf", ["src/erwin/mt_map/mpf.pyx"])
     ]),
     
-    python_requires=">=3.5",
+    python_requires=">=3.6",
     
+    setup_requires=["cython"],
     install_requires=[
         "cython", "dmri-amico", "doit", "meg", "nibabel", "numpy", "scipy",
         "spire-pipeline>=1.1.1", "sycomore"],

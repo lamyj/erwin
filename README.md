@@ -16,10 +16,14 @@ Using doit and Spire, *erwin* allows the definition of complex pipelines with au
 
 ## Installation
 
-*erwin* requires Python ≥ 3.5 The easiest way to install *erwin* and its dependencies is through [PyPi][] and [pip][] (the `python3` executable may need to be adjusted to fit your local installation):
+*erwin* requires Python ≥ 3.6 The easiest way to install *erwin* and its dependencies is through [PyPi][] and [pip][]:
 ```
 python3 -m pip install erwin
 ```
+
+If this fails, you may need to
+- adjust the `python3` executable to match your local installation
+- install [Cython][]
 
 Using the following methods requires additional dependencies:
 - Diffusion tensor and spherical harmonics: [MRtrix][]; conversion from Bruker or Siemens DICOM also requires [Dicomifier][]
@@ -73,6 +77,7 @@ phase = nibabel.load("/path/to/phase.nii.gz")
 
 [Amico]: https://github.com/daducci/AMICO
 [ANTs]: https://github.com/ANTsX/ANTs
+[Cython]: https://cython.org/
 [Dicomifier]: https://dicomifier.readthedocs.io/
 [MEDI]: http://pre.weill.cornell.edu/mri/pages/qsm.html
 [MRtrix]: https://www.mrtrix.org/
