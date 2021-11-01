@@ -60,8 +60,8 @@ setuptools.setup(
     
     setup_requires=["cython"],
     install_requires=[
-        "cython", "dmri-amico", "doit", "meg", "nibabel", "numpy", "scipy",
-        "spire-pipeline>=1.1.1", "sycomore"],
+        "cython", "dmri-amico", "doit", "meg", "nibabel", "numpy", "pydicom",
+        "scipy", "spire-pipeline>=1.1.1", "sycomore"],
     
     entry_points={ "console_scripts": [ "erwin=erwin.__main__:main"] },
 )
