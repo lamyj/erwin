@@ -26,8 +26,6 @@ class R2Star(spire.TaskFactory):
         
         source = nibabel.load(source_path)
         
-        echo_times = [x[0]*1e-3 for x in echo_times]
-        
         with meg.Engine() as engine:
             engine("run('{}/MEDI_set_path.m');".format(medi_toolbox_path))
             engine["echo_times"] = echo_times
@@ -44,6 +42,6 @@ def main():
             parsing.EchoTimes,
             ("--target", {"help": "R2* image"}),
             (
-                "--medi", {
+                "--medi-toolbox", "--medi", {
                     "dest": "medi_toolbox", 
                     "help": "Path to the MEDI toolbox"})])

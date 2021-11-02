@@ -32,36 +32,27 @@ class VFA(spire.TaskFactory):
             T1_map_path):
         """T1 map generation"""
         
-        # TE (in seconds)
-        TE = echo_time * 1e-3
-        # TR (in seconds)
-        TR = repetition_time * 1e-3
-        
         # Load the VFA signal
         sources = [nibabel.load(x) for x in source_paths]
         signal = numpy.asarray([x.get_fdata() for x in sources])
-        # If we have multiple echoes, average them
-        if signal.ndim > 3:
-            signal = signal.mean(axis=-1)
         
         # Compute a flip angle map from the nominal flip angles
         B1_map = nibabel.load(B1_map_path).get_fdata()
-        nominal_flip_angles = [numpy.radians(x) for x in flip_angles]
-        flip_angle = numpy.asarray([B1_map * x for x in nominal_flip_angles])
+        flip_angle_map = numpy.asarray([B1_map * x for x in flip_angles])
         
         # Compute the B1-corrected T1 map
         with numpy.errstate(divide="ignore", invalid="ignore"):
-            X = signal / numpy.tan(flip_angle)
-            Y = signal / numpy.sin(flip_angle)
+            X = signal / numpy.tan(flip_angle_map)
+            Y = signal / numpy.sin(flip_angle_map)
             # Eq. 3b
             SL = (Y[0]-Y[1]) / (X[0]-X[1])
             # Eq. 3a. The flip angles have been corrected by the B1 map, but T1'
             # still includes the effects of the RF spoiling
-            T1_prime = -TR / numpy.log(SL)
+            T1_prime = -repetition_time / numpy.log(SL)
         
         # Compute the RF-spoiling correction
         pA, pB = VFA.rf_spoiling_correction_paremeters(
-            [x*rad for x in nominal_flip_angles], TE*s, TR*s)
+            [x*rad for x in flip_angles], echo_time*s, repetition_time*s)
         
         A = numpy.polyval(pA, B1_map)
         B = numpy.polyval(pB, B1_map)

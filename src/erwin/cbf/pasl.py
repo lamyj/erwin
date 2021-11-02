@@ -51,14 +51,11 @@ class pASL(spire.TaskFactory):
         # 23 Hz for white matter
         delta_R2_star = 20
         
-        # Echo time in s
-        TE = echo_time * 1e-3
-
         # Inversion times, as defined in Wang et al., in seconds
         # Time between inversion and saturation
-        TI_1 = inversion_times[0] * 1e-3
+        TI_1 = inversion_times[0]
         # Time between inversion and image acquisition of *first* slice
-        TI_2 = inversion_times[1] * 1e-3
+        TI_2 = inversion_times[1]
         # Convert TI_2 to real slice acquistion time
         TI_2 = TI_2 + slice_time.get_fdata()
         # WARNING: slice timing may vary across volumes. Average the 
@@ -74,7 +71,7 @@ class pASL(spire.TaskFactory):
             CBF = (
               (lambda_ * delta_M)
               / (2*alpha * M0[..., None] * TI_1 * numpy.exp(-TI_2 / T1_a)) 
-              * numpy.exp(delta_R2_star * TE))
+              * numpy.exp(delta_R2_star * echo_time))
             
             # Average all volumes
             CBF = numpy.nanmean(CBF, axis=-1)

@@ -45,15 +45,10 @@ class pSSFP(spire.TaskFactory):
         sources = [nibabel.load(x) for x in source_paths]
         B1 = nibabel.load(B1_map_path).get_fdata()
 
-        alpha = numpy.radians(flip_angle)
-        alpha *= B1
-        
-        TR = repetition_time*1e-3
+        alpha = flip_angle*B1
         
         if not isinstance(T1, float):
             T1 = nibabel.load(T1).get_fdata()
-
-        phi = numpy.radians(phase_increments)
 
         S = [x.get_fdata() for x in sources]
         S_sq = numpy.power(S, 2)
@@ -62,9 +57,9 @@ class pSSFP(spire.TaskFactory):
         xi = pSSFP.compute_xi(eta)
         
         T2_biased = (
-            2*TR/xi * numpy.sqrt(
+            2*repetition_time/xi * numpy.sqrt(
                 (S_sq[0]-S_sq[1]) 
-                / (S_sq[1]*phi[1]**2 - S_sq[0]*phi[0]**2)))
+                / (S_sq[1]*phase_increments[1]**2 - S_sq[0]*phase_increments[0]**2)))
         T2 = T2_biased / (1 - 3/2*(eta * T2_biased / T1))
 
         nibabel.save(nibabel.Nifti1Image(T2, sources[0].affine), T2_map_path)
@@ -102,8 +97,8 @@ def main():
                 [
                     "--phase-increments", {
                         "type": float,
-                        "help": "Phase increment for each bSSFP image (°)"}],
+                        "help": "Phase increment for each bSSFP image (rad)"}],
                 2),
             ("--B1-map", "--b1-map", {"help": "B1 map in bSSFP space"}),
-            ("--T1-map", "--t1-map", {"help": "T1 map in bSSFP space"}),
+            ("--T1-map", "--t1-map", {"help": "T1 map in bSSFP space or global T1 (s)"}),
             ("--target", {"help": "Target T2 map"})])

@@ -46,10 +46,7 @@ class MediL1(spire.TaskFactory):
         brain = nibabel.load(brain_path)
         ventricles = nibabel.load(ventricles_path)
         
-        echo_times = [1e-3*x[0] for x in echo_times]
         echo_spacing = numpy.diff(echo_times).mean()
-        
-        imaging_frequency = 1e6 * imaging_frequency
         
         with meg.Engine() as engine:
             engine("run('{}/MEDI_set_path.m');".format(medi_toolbox_path))
@@ -106,6 +103,6 @@ def main():
             ("--ventricles", {"help": "Ventricles mask"}),
             ("--target", {"help": "Total field image"}),
             (
-                "--medi", {
+                "--medi-toolbox", "--medi", {
                     "dest": "medi_toolbox", 
                     "help": "Path to the MEDI toolbox"})])

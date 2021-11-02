@@ -37,6 +37,6 @@ def main():
             ("--mask", {"help": "Mask image"}),
             ("--target", {"help": "Ventricles mask"}),
             (
-                "--medi", {
+                "--medi-toolbox", "--medi", {
                     "dest": "medi_toolbox", 
                     "help": "Path to the MEDI toolbox"})])

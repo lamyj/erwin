@@ -35,7 +35,7 @@ class DoubleEcho(spire.TaskFactory):
         delta_phase = numpy.angle(delta_phase)
         
         # Difference between echo times in seconds.
-        delta_TE = (echo_times[1] - echo_times[0]) * 1e-3
+        delta_TE = (echo_times[1] - echo_times[0])
         
         # ΔB₀ map in Hz
         B0_map = delta_phase / (2*numpy.pi*delta_TE)

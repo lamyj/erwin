@@ -13,18 +13,18 @@ def Multiple(specification, nargs="+"):
 
 ImagingFrequency = [
     "--imaging-frequency",
-    {"type": float, "help": "Frequency of the scanner (MHz)"}]
+    {"type": float, "help": "Frequency of the scanner (Hz)"}]
 
-FlipAngle = ["--flip-angle", {"type": float, "help": "Flip angle (°)"}]
+FlipAngle = ["--flip-angle", {"type": float, "help": "Flip angle (rad)"}]
 FlipAngles = Multiple(["--flip-angles", *FlipAngle[1:]])
 
-EchoTime = ["--echo-time", "--te", {"type": float, "help": "Echo time (ms)"}]
+EchoTime = ["--echo-time", "--te", {"type": float, "help": "Echo time (s)"}]
 EchoTimes = Multiple(["--echo-times", *EchoTime[1:]])
 
 InversionTime = [
-    "--inversion-time", "--ti", {"type": float, "help": "Inversion time (ms)"}]
+    "--inversion-time", "--ti", {"type": float, "help": "Inversion time (s)"}]
 InversionTimes = Multiple(["--inversion-times", *InversionTime[1:]])
 
 RepetitionTime = [
     "--repetition-time", "--tr",
-    {"type": float, "help": "Repetition time (ms)"}]
+    {"type": float, "help": "Repetition time (s)"}]

@@ -65,6 +65,6 @@ def main():
             ("--f-total", {"help": "Total field image"}),
             ("--sd-noise", {"nargs": "?", "help": "Total field image"}),
             (
-                "--medi", {
+                "--medi-toolbox", "--medi", {
                     "dest": "medi_toolbox", 
                     "help": "Path to the MEDI toolbox"})])

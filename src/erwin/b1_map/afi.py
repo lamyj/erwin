@@ -26,15 +26,13 @@ class AFI(spire.TaskFactory):
         image = nibabel.load(source_path)
         data = image.get_fdata()
         
-        nominal_fa = numpy.radians(flip_angle)
-        
         with numpy.errstate(divide="ignore", invalid="ignore"):
             r = data[..., 1] / data[..., 0]
         n = tr_ratio
         actual_fa = numpy.arccos((r*n - 1)/(n-r))
         
         nibabel.save(
-            nibabel.Nifti1Image(actual_fa/nominal_fa, image.affine), 
+            nibabel.Nifti1Image(actual_fa/flip_angle, image.affine), 
             target_path)
         
 def main():

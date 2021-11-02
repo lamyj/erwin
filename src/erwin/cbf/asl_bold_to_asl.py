@@ -29,15 +29,12 @@ class ASLBOLDToASL(spire.TaskFactory):
     def filter(source_path, repetition_time, cutoff_frequency, target_path):
         source = nibabel.load(source_path)
         
-        # Get repetition time
-        TR = repetition_time * 1e-3
-        
         # Build the frequencies array and the stop-band based on the TR
         # NOTE: the first volume does not have the inversion pulses and must not
         # be part of the FFT. Additionnally, for consistency, we keep ω=0. 
         # However, since we are only interested in ΔM when computing the CBF, 
         # this choice does not affect the CBF computation.
-        frequencies = numpy.fft.fftfreq(source.shape[3]-1, TR)
+        frequencies = numpy.fft.fftfreq(source.shape[3]-1, repetition_time)
         pass_band = numpy.abs(frequencies) >= cutoff_frequency
         pass_band[0] = True
         pass_band = pass_band.astype(float)

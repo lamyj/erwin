@@ -54,7 +54,7 @@ class SinglePoint(spire.TaskFactory):
             MPF_map_path):
         
         # Load the images
-        MT_off, MT_on = [nibabel.load(x) for x in source_paths]
+        MT_off, MT_on = [nibabel.load(x) for x in [MT_off_path, MT_on_path]]
         B0_map = nibabel.load(B0_map_path)
         B1_map = nibabel.load(B1_map_path)
         T1_map = nibabel.load(T1_map_path)
@@ -73,11 +73,11 @@ class SinglePoint(spire.TaskFactory):
         
         # Saturation power of the MT saturation pulse
         omega_1_rms_nominal = SinglePoint.omega_1_rms_gaussian_pulse(
-            mt_duration*1e-3, numpy.radians(mt_flip_angle))
+            mt_duration, mt_flip_angle)
         omega_1_rms = omega_1_rms_nominal * B1_map.get_fdata()
         
         source_arrays = [x.get_fdata() for x in [MT_off, MT_on]]
-        if len(meta_data_array[0]["EchoTime"]) > 1:
+        if MT_off.ndim > 3:
             source_arrays = [x.mean(axis=-1) for x in source_arrays]
         with numpy.errstate(divide="ignore", invalid="ignore"):
             S_ratio = source_arrays[1]/source_arrays[0]
@@ -86,9 +86,7 @@ class SinglePoint(spire.TaskFactory):
         
         f = SinglePoint.estimate_f_map(
             S_ratio, R1, T2_free, delta_omega, omega_1_rms, G,
-            repetition_time*1e-3, mt_duration*1e-3, 
-            numpy.radians(flip_angle), 
-            f0)
+            repetition_time, mt_duration, flip_angle, f0)
 
         # Clamp the MPF map in its "true" range
         f[f<0] = numpy.nan
@@ -213,10 +211,10 @@ def main():
             ("--MT-on", "--mt-on", {"help": "SPGR image with MT pulse"}),
             (
                 "--mt-flip-angle", {
-                    "type": float, "help": "Flip angle of the MT pulse (°)"}),
+                    "type": float, "help": "Flip angle of the MT pulse (rad)"}),
             (
                 "--mt-duration", {
-                    "type": float, "help": "Duration of the MT pulse (ms)"}),
+                    "type": float, "help": "Duration of the MT pulse (s)"}),
             (
                 "--mt-frequency-offset", {
                     "type": float,
