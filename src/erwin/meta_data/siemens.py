@@ -8,6 +8,12 @@ def get_csa(data_set, parent_tag, item, value):
     """ Search for content in a CSA element of a Siemens data set.
     """
     
+    # NOTE: the private creator may be stored in a binary VR and thus be
+    # base64-encoded
+    csa_header = "SIEMENS CSA HEADER"
+    csa_headers = [
+        csa_header, base64.b64encode(csa_header.encode()).decode()]
+    
     match = re.match(r"0029(\d\d)\d\d", parent_tag)
     if match:
         private_creator = data_set["002900{}".format(match.group(1))]
@@ -15,7 +21,7 @@ def get_csa(data_set, parent_tag, item, value):
             private_creator = private_creator.value
         if isinstance(private_creator, list):
             private_creator = private_creator[0]
-        if private_creator != "SIEMENS CSA HEADER":
+        if private_creator not in csa_headers:
             raise Exception("Not a Siemens data set")
         
         try:
