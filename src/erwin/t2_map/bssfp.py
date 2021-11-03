@@ -56,7 +56,8 @@ class bSSFP(spire.TaskFactory):
         
         T1 = nibabel.load(T1_map_path).get_fdata()
         T1[T1<0] = 1e-12
-        E1 = numpy.exp(-repetition_time/T1)[None, ...]
+        with numpy.errstate(divide="ignore", invalid="ignore"):
+            E1 = numpy.exp(-repetition_time/T1)[None, ...]
         
         S = numpy.asarray([source.get_fdata() for source in sources])
         
@@ -75,7 +76,8 @@ class bSSFP(spire.TaskFactory):
         m = numerator/denominator
         
         # Equation 4, WARNING complex data possible
-        tau_2 = -repetition_time / numpy.log((E1-m) / (1 - m*E1))
+        with numpy.errstate(divide="ignore", invalid="ignore"):
+            tau_2 = -repetition_time / numpy.log((E1-m) / (1 - m*E1))
         
         # Below equation 11
         K_N = numpy.sqrt(8/(3*len(source_paths)/2))

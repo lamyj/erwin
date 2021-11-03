@@ -17,7 +17,7 @@ class VFA(spire.TaskFactory):
     def __init__(
             self, sources, flip_angles, echo_time, repetition_time, B1_map,
             target):
-        """ :param Sequence(str, 2) sources: Path to source images
+        """ :param Sequence(str, 2) sources: Paths to source images
             :param Sequence(float, 2) flip_angles: Flip angles of source \
                 images (rad)
             :param float echo_time,te: Echo time (s)
