@@ -23,12 +23,12 @@ python3 -m pip install erwin
 
 If this fails, you may need to
 - adjust the `python3` executable to match your local installation
+- upgrade `pip` (`python3 -m pip install --upgrade pip`, especially on Debian ≤ 10 and Ubuntu ≤ 18.04)
 - install [Cython][]
 
 Using the following methods requires additional dependencies:
 - Diffusion tensor and spherical harmonics: [MRtrix][]; conversion from Bruker or Siemens DICOM also requires [Dicomifier][]
 - Motion correction: [ANTs][]
-- NODDI: [Amico][]
 - QSM: [MEDI][]
 
 ## Command-line usage
