@@ -12,6 +12,12 @@ class ApplyAnts(spire.TaskFactory):
     """
     
     def __init__(self, time_series, transforms, reference, target):
+        """ :param str time_series: Path to source time series
+            :param str transforms: Path to 4D motion-correction transform image
+            :param str reference: Path to reference time-series defining the geometry
+            :param str target: Path to target time series
+        """
+        
         spire.TaskFactory.__init__(self, str(target))
         
         self.file_dep = [time_series, transforms, reference]
@@ -68,12 +74,4 @@ class ApplyAnts(spire.TaskFactory):
             target_path)
 
 def main():
-    return entrypoint(
-        ApplyAnts, [
-            ("--time_series", {"help": "Source time series"}),
-            ("--transforms", {"help": "4D motion-correction transform image"}),
-            (
-                "--reference", 
-                {"help": "Reference time-series defining the geometry"}),
-            ("--target", {"help": "Target time series"})
-        ])
+    return entrypoint(ApplyAnts)

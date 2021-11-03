@@ -6,7 +6,6 @@ import re
 import struct
 import tempfile
 
-import dicomifier
 import nibabel
 import numpy
 import spire
@@ -18,6 +17,10 @@ class BrukerToMIF(spire.TaskFactory):
     """
     
     def __init__(self, source, target):
+        """ :param str source: Path to DWI data in Bruker format
+            :param str target: Path to target DWI image in MIF format
+        """
+        
         spire.TaskFactory.__init__(self, str(target))
     
         meta_data = re.sub(r"\.nii(\.gz)?$", ".json", str(source))
@@ -49,6 +52,8 @@ class BrukerToMIF(spire.TaskFactory):
     
     @staticmethod
     def diffusion_scheme(meta_data_path, scheme_path):
+        import dicomifier
+        
         with open(meta_data_path) as fd:
             meta_data = json.load(fd)
         scheme = dicomifier.nifti.diffusion.from_standard(meta_data)
@@ -105,9 +110,4 @@ class BrukerToMIF(spire.TaskFactory):
         numpy.savetxt(str(scheme_path), scheme)
 
 def main():
-    return entrypoint(
-        BrukerToMIF, [
-            ("--source", {"help": "Diffusion-weighted image"}),
-            (
-                "--target",
-                {"help": "Path to the target DWI image in MIF format"})])
+    return entrypoint(BrukerToMIF)

@@ -18,6 +18,26 @@ class BET(spire.TaskFactory):
             fractional_intensity_threshold=None, vertical_gradient=None, 
             radius=None, center_of_gravity=None, thresholding=False, 
             brain_mesh=None, variant=None):
+        """ :param str source: Path to source image
+            :param str target: Path to target brain image
+            :param Optional(str) mask: Path to target brain mask
+            :param Optional(str) skull: Path to target skull mask
+            :param Flag(False, True, True, "no") brain: Whether to store the brain image
+            :param Optional(float) fractional_intensity_threshold,f: \
+                Fractional intensity threshold
+            :param Optional(float) vertical_gradient,g: Vertical gradient
+            :param Optional(float) radius: Initial radius (mm)
+            :param Sequence(float, 3, True) center_of_gravity,cog: Center of \
+                gravity (voxels)
+            :param Flag(True, False, True) thresholding: Apply thresholding to \
+                segmented brain image and mask
+            :param Optional(str) brain_mesh: Path to target brain mesh
+            :param Choice(\
+                [\
+                    "robust", "optic", "neck", "small_fov", "fmri", \
+                    "additionnal_surfaces"], True) variant: \
+                Variations on default bet2 functionality
+        """
         
         self.targets = []
         if brain:
@@ -110,41 +130,4 @@ class BET(spire.TaskFactory):
                 shutil.copy(temp_dir/"bet_mesh.vtk", brain_mesh)
 
 def main():
-    return entrypoint(
-        BET, [
-            ("--source", {"help": "Source image"}),
-            ("--target", {"help": "Target brain image"}),
-            parsing.Optional(["--mask", {"help": "Target brain mask"}]),
-            parsing.Optional(["--skull", {"help": "Target skull mask"}]),
-            parsing.Optional([
-                "--no-brain", {
-                    "action": "store_false", "dest": "brain",
-                    "help": "Don't store the brain image"}]),
-            parsing.Optional([
-                "--threshold", {
-                    "help": "Fractional intensity threshold", "type": float, 
-                    "dest": "fractional_intensity_threshold"}]),
-            parsing.Optional([
-                "--gradient", {
-                    "help": "Vertical gradient", "type": float, 
-                    "dest": "vertical_gradient"}]),
-            parsing.Optional(
-                ["--radius", {"help": "Initial radius (mm)", "type": float}]),
-            parsing.Optional([
-                "--cog", {
-                    "help": "Center of gravity (voxels, as 'x,y,z')", 
-                    "type": lambda x: [float(x) for x in x.split(",")],
-                    "dest": "center_of_gravity"}]),
-            parsing.Optional([
-                "--thresholding", {
-                    "help": "Apply thresholding to segmented brain image and mask",
-                    "action": "store_true"}]),
-            parsing.Optional(
-                ["--mesh", {"help": "Target brain mesh", "dest": "brain_mesh"}]),
-            parsing.Optional([
-                "--variant", {
-                    "help": "Variations on default bet2 functionality", 
-                    "choices": [
-                        "robust", "optic", "neck", "small_fov", "fmri", 
-                        "additionnal_surfaces"]}])
-            ])
+    return entrypoint(BET)

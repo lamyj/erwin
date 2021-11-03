@@ -12,6 +12,11 @@ class R2Star(spire.TaskFactory):
     """
     
     def __init__(self, source, echo_times, target, medi_toolbox):
+        """ :param str source: Path to source magnitude image
+            :param Sequence(float) echo_times,te: Echo times (s)
+            :param str target: Path to R2* map (Hz)
+            :param str medi_toolbox,medi: Path to the MEDI toolbox
+        """
         spire.TaskFactory.__init__(self, str(target))
         
         self.file_dep = [source]
@@ -36,12 +41,4 @@ class R2Star(spire.TaskFactory):
         nibabel.save(nibabel.Nifti1Image(R2_star, source.affine), target_path)
 
 def main():
-    return entrypoint(
-        R2Star, [
-            ("--source", {"help": "Multi-echo magnitude image"}),
-            parsing.EchoTimes,
-            ("--target", {"help": "R2* image"}),
-            (
-                "--medi-toolbox", "--medi", {
-                    "dest": "medi_toolbox", 
-                    "help": "Path to the MEDI toolbox"})])
+    return entrypoint(R2Star)

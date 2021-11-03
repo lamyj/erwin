@@ -12,6 +12,14 @@ class TotalField(spire.TaskFactory):
     """
     
     def __init__(self, magnitude, phase, f_total, medi_toolbox, sd_noise=None):
+        """ :param str magnitude: Path to source magnitude images
+            :param str phase: Path to source phase images
+            :param str f_total: Path to target total field image
+            :param str medi_toolbox,medi: Path to the MEDI toolbox
+            :param Optional(str) sd_noise: Path to target map of standard \
+                deviation of noise in total susceptibility field
+        """
+        
         spire.TaskFactory.__init__(self, str(f_total))
         
         self.file_dep = [magnitude, phase]
@@ -58,13 +66,4 @@ class TotalField(spire.TaskFactory):
                 sd_noise_path)
 
 def main():
-    return entrypoint(
-        TotalField, [
-            ("--magnitude", {"help": "Multi-echo magnitude image"}),
-            ("--phase", {"help": "Multi-echo phase image"}),
-            ("--f-total", {"help": "Total field image"}),
-            ("--sd-noise", {"nargs": "?", "help": "Total field image"}),
-            (
-                "--medi-toolbox", "--medi", {
-                    "dest": "medi_toolbox", 
-                    "help": "Path to the MEDI toolbox"})])
+    return entrypoint(TotalField)

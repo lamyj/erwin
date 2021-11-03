@@ -12,6 +12,11 @@ class MultiTissueNormalization(spire.TaskFactory):
     """
     
     def __init__(self, sources, mask, targets):
+        """ :param Sequence(str) sources: Path to source by-tissue images
+            :param str mask: Path to mask image
+            :param Sequence(str) targets: Path to target normalized images
+        """
+        
         spire.TaskFactory.__init__(self, str(targets[0]))
         self.file_dep = sources
         self.targets = targets
@@ -23,10 +28,4 @@ class MultiTissueNormalization(spire.TaskFactory):
         ]
 
 def main():
-   return entrypoint(
-        MultiTissueNormalization, [
-            parsing.Multiple(
-                ["--sources", {"help": "Source by-tissue images"}]),
-            ("--mask", {"help": "mask"}),
-            parsing.Multiple(
-                ["--targets", {"help": "Target normalized images"}])])
+   return entrypoint(MultiTissueNormalization)

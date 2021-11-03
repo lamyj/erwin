@@ -16,6 +16,14 @@ class NODDIResponses(spire.TaskFactory):
     def __init__(
             self, dwi, response_directory, 
             shell_width=0, b0_threshold=0, lmax=12, ndirs=32761):
+        """ :param str dwi: Path to diffusion-weighted image, in MRtrix format
+            :param str response_directory: Path to target response directory
+            :param Optional(float, 0.) shell_width: Width used to group the real b-values in ideal shells (s/mm^2)
+            :param Optional(float, 0.) b0_threshold: Lower b-value threshold (s/mm^2)
+            :param Optional(float, 12.) lmax: Maximum order of spherical harmonics
+            :param Optional(float, 32761.) ndirs: Number of directions on the hemisphere
+        """
+        
         spire.TaskFactory.__init__(self, str(response_directory))
         self.file_dep = [dwi]
         
@@ -49,24 +57,4 @@ class NODDIResponses(spire.TaskFactory):
             response_directory, rotation_matrices, shells, harmonics, ndirs)
 
 def main():
-    return entrypoint(
-        NODDIResponses, [
-            ("--dwi", {"help": "Diffusion-weighted image, in MRtrix format"}),
-            ("--response-directory", {"help": "Target response directory"}),
-            parsing.Optional([
-                "--shell-width", {
-                    "type":float, "default": 0, 
-                    "help": "Width used to group the real b-values in ideal shells"}]),
-            parsing.Optional([
-                "--b0-threshold", {
-                    "type":float, "default": 0, 
-                    "help": "Lower b-value threshold"}]),
-            parsing.Optional([
-                "--lmax", {
-                    "type":int, "default": 12,
-                    "help": "Maximum order of spherical harmonics"}]),
-            parsing.Optional([
-                "--ndirs", {
-                    "type": int, "default": 32761,
-                    "help": "Number of directions on the hemisphere"}])
-        ])
+    return entrypoint(NODDIResponses)

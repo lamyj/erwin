@@ -9,6 +9,13 @@ class FODSegmentation(spire.TaskFactory):
     """
     
     def __init__(self, fod, fixel_directory, afd=None, peak_amp=None, disp=None):
+        """ :param str fod: Path to FOD image
+            :param str fixel_directory: Path to target fixel directory
+            :param Optional(str) afd: Path to apparent fiber density map
+            :param Optional(str) peak_amp: Path to map of the maximal FOD peak
+            :param Optional(str) disp: Path to dispersion map
+        """
+        
         spire.TaskFactory.__init__(self, str(fixel_directory))
         self.file_dep = [fod]
         
@@ -28,11 +35,4 @@ class FODSegmentation(spire.TaskFactory):
                 + [fod, fixel_directory]]
 
 def main():
-    return entrypoint(
-        FODSegmentation, [
-            ("--fod", {"help": "FOD image"}),
-            ("--fixel-directory", {"help": "Target fixel directory"}),
-            parsing.Optional(["--afd", {"help": "Apparent fiber density map"}]),
-            parsing.Optional(
-                ["--peak-amp", {"help": "Map of the maximal FOD peak"}]),
-            parsing.Optional(["--disp", {"help": "Dispersion map"}])])
+    return entrypoint(FODSegmentation)

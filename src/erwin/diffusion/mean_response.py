@@ -9,6 +9,10 @@ class MeanResponse(spire.TaskFactory):
     """
     
     def __init__(self, sources, target):
+        """ :param Sequence(str) sources: Path to source responses
+            :param str target: Path to target average response
+        """
+        
         spire.TaskFactory.__init__(self, str(target))
         
         self.file_dep = sources
@@ -17,8 +21,4 @@ class MeanResponse(spire.TaskFactory):
         self.actions = [["responsemean", "-force"] + sources + [target]]
 
 def main():
-    return entrypoint(
-        MeanResponse, [
-            ("--sources", {"nargs": "+", "help": "Source responses"}),
-            ("--target", {"help": "Target average response"})
-        ])
+    return entrypoint(MeanResponse)

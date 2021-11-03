@@ -97,6 +97,10 @@ class Getter(object):
     """Print the value of a meta-data item."""
     
     def __init__(self, path, query, unit=None):
+        """ :param str path,p: Path to meta-data file
+            :param str query,q: Meta-data query
+            :param Optional(str) unit,u: Implicit unit of meta-data
+        """
         self.actions = [(Getter.get, (path, query, unit))]
     
     @staticmethod
@@ -105,8 +109,4 @@ class Getter(object):
         print(value)
 
 def main():
-    return entrypoint(
-        Getter, [
-            ("--path", "-p", {"help": "Input path"}),
-            ("--query", "-q", {"help": "Meta-data query"}),
-            parsing.Optional(["--unit", "-u", {"help": "Unit of meta-data"}])])
+    return entrypoint(Getter)

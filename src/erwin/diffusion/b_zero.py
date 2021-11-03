@@ -7,6 +7,11 @@ class BZero(spire.TaskFactory):
     """
     
     def __init__(self, source, target, average=False):
+        """ :param str source: Path to DWI data
+            :param str target: Path to target 4D image of all b=0 volumes
+            :param Flag(True, False, True) average: Compute average of all b=0 volumes
+        """
+        print(source, target, average)
         spire.TaskFactory.__init__(self, str(target))
         self.file_dep = [source]
         self.targets = [target]
@@ -18,11 +23,4 @@ class BZero(spire.TaskFactory):
                 ["mrmath", "-force", "-quiet", target, "mean", "-axis", "3", target])
 
 def main():
-    return entrypoint(
-        BZero, [
-            ("--source", {"help": "DWI data set"}),
-            ("--target", {"help": "Target 4D image of all b=0 volumes"}),
-            parsing.Optional([
-                "--average", {
-                    "action": "store_true",
-                    "help": "Average of all b=0 volumes"}])])
+    return entrypoint(BZero)

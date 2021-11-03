@@ -8,6 +8,12 @@ class TensorMetric(spire.TaskFactory):
         This wraps tensor2metrix from MRtrix3.
     """
     def __init__(self, source, kind, target, num=None, mask=None):
+        """ :param str source: Path to source DWI image
+            :param Choice(["adc", "fa", "ad", "rd", "value", "vector"]) kind: Metric kind
+            :param Optional(int) num: Desired eigenvalue or eigenvector
+            :param Optional(str) mask: Path to binary mask image
+        """
+        
         spire.TaskFactory.__init__(self, str(target))
         self.file_dep = [source]
         if mask is not None:
@@ -22,16 +28,4 @@ class TensorMetric(spire.TaskFactory):
                 + [source]]
 
 def main():
-    return entrypoint(
-        TensorMetric, [
-            ("--source", {"help": "Source DWI image"}),
-            (
-                "--kind", {
-                    "choices": ["adc", "fa", "ad", "rd", "value", "vector"], 
-                    "help": "Metric kind"}),
-            ("--target", {"help": "Target diffusion tensor image"}),
-            parsing.Optional([
-                "--num", {
-                    "type": int, "help": "Desired eigenvalue or eigenvector"}]),
-            parsing.Optional(["--mask", {"help": "Binary mask"}])
-        ])
+    return entrypoint(TensorMetric)

@@ -15,6 +15,10 @@ class Preprocessing(spire.TaskFactory):
     """
     
     def __init__(self, source, target):
+        """ :param str source: Path to source diffusion-weighted image
+            :param str target: Path to the target preprocessed DWI image
+        """
+        
         spire.TaskFactory.__init__(self, str(target))
         
         target_dir = os.path.dirname(target)
@@ -44,7 +48,4 @@ class Preprocessing(spire.TaskFactory):
         ]
 
 def main():
-    return entrypoint(
-        Preprocessing, [
-            ("--source", {"help": "Diffusion-weighted image"}),
-            ("--target", {"help": "Path to the target preprocessed DWI image"})])
+    return entrypoint(Preprocessing)

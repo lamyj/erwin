@@ -23,6 +23,19 @@ class NODDI(spire.TaskFactory):
             self, dwi, response_directory, principal_direction,
             ic_vf, iso_vf, od, 
             mask=None, shell_width=0, b0_threshold=0, lmax=12, ndirs=32761):
+        """ :param str dwi: Path to diffusion-weighted image, in MRtrix format
+            :param str response_directory: Path to response directory
+            :param str principal_direction: Path to principal direction map
+            :param str ic_vf: Path to target intra-cellular volume fraction map
+            :param str iso_vf: Path to target isotropic volume fraction map
+            :param str od: Path to target orientation dispersion map
+            :param Optional(str) mask: Path to mask image
+            :param Optional(float, 0.) shell_width: Width used to group the real b-values in ideal shells (s/mm^2)
+            :param Optional(float, 0.) b0_threshold: Lower b-value threshold (s/mm^2)
+            :param Optional(float, 12.) lmax: Maximum order of spherical harmonics
+            :param Optional(float, 32761.) ndirs: Number of directions on the hemisphere
+        """
+        
         spire.TaskFactory.__init__(self, str(ic_vf))
         
         model = amico.models.NODDI()
@@ -125,28 +138,4 @@ class NODDI(spire.TaskFactory):
         return scheme
 
 def main():
-    return entrypoint(
-        NODDI, [
-            ("--dwi", {"help": "Diffusion-weighted image, in MRtrix format"}),
-            ("--response-directory", {"help": "NODDI responses directory"}),
-            ("--ic-vf", {"help": "Target intra-cellular volume fraction map"}),
-            ("--iso-vf", {"help": "Target isotropic volume fraction map"}),
-            ("--od", {"help": "Target orientation dispersion map"}),
-            parsing.Optional(["--mask", {"help": "Mask image"}]),
-            parsing.Optional([
-                "--shell-width", {
-                    "type":float, "default": 0, 
-                    "help": "Width used to group the real b-values in ideal shells"}]),
-            parsing.Optional([
-                "--b0-threshold", {
-                    "type":float, "default": 0, 
-                    "help": "Lower b-value threshold"}]),
-            parsing.Optional([
-                "--lmax", {
-                    "type":int, "default": 12,
-                    "help": "Maximum order of spherical harmonics"}]),
-            parsing.Optional([
-                "--ndirs", {
-                    "type": int, "default": 32761,
-                    "help": "Number of directions on the hemisphere"}])
-        ])
+    return entrypoint(NODDI)

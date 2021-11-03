@@ -16,6 +16,11 @@ class ASLBOLDToASL(spire.TaskFactory):
     """
     
     def __init__(self, source, repetition_time, target, cutoff_frequency=0.1125):
+        """ :param str source: Path to source ASL-BOLD image
+            :param float repetition_time: Repetition time (s)
+            :param str target: Path to target ASL image
+            :param Optional(float, 0.1125) cutoff_frequency: Cut-off frequency between ASL and BOLD (Hz)
+        """
         spire.TaskFactory.__init__(self, str(target))
         
         self.file_dep = [source]
@@ -48,13 +53,4 @@ class ASLBOLDToASL(spire.TaskFactory):
             nibabel.Nifti1Image(target_array, source.affine), target_path)
 
 def main():
-    return entrypoint(
-        ASLBOLDToASL, [
-            ("--source", {"help": "Source ASL-BOLD image"}),
-            parsing.RepetitionTime,
-            ("--target", {"help": "Target ASL image"}),
-            parsing.Optional([
-                "--cutoff-frequency", {
-                    "help": "Cut-off frequency (Hz)", "type": float,
-                    "default": 0.1125}])
-        ])
+    return entrypoint(ASLBOLDToASL)

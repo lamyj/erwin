@@ -15,6 +15,16 @@ class bSSFP(spire.TaskFactory):
     def __init__(
             self, sources, flip_angles, phase_increments, repetition_time,
             B1_map, T1_map, target):
+        """ :param Sequence(str) sources: Paths to source images
+            :param Sequence(float) flip_angles: Flip angles (rad)
+            :param Sequence(float) phase_increments: Phase increment of the RF \
+                pulse in each source image (rad)
+            :param float repetition_time,tr: Repetition time (s)
+            :param str B1_map,b1_map: Relative B₁ map
+            :param str T1_map,t1_map: T₁ map (s)
+            :param str target: Path to the target T₂ map (s)
+        """
+        
         spire.TaskFactory.__init__(self, str(target))
         
         self.file_dep = [*sources, B1_map, T1_map]
@@ -78,15 +88,4 @@ class bSSFP(spire.TaskFactory):
             T2_map_path)
 
 def main():
-    return entrypoint(
-        bSSFP, [
-            ("--sources", {"nargs": "+", "help": "Source images"}),
-            parsing.FlipAngles,
-            (
-                "--phase-increments", {
-                    "nargs": "+", "type": float,
-                    "help": "Phase increment for each bSSFP image (rad)"}),
-            parsing.RepetitionTime,
-            ("--B1-map", "--b1-map", {"help": "B1 map in bSSFP space"}),
-            ("--T1-map", "--t1-map", {"help": "T1 map in bSSFP space"}),
-            ("--target", {"help": "Target T2 map"})])
+    return entrypoint(bSSFP)

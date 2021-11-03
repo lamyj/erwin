@@ -9,6 +9,10 @@ class Ants(spire.TaskFactory):
     """
     
     def __init__(self, source, prefix):
+        """ :param str source: Path to source time-series image
+            :param str prefix: Prefix of the target files
+        """
+        
         spire.TaskFactory.__init__(self, str(prefix))
         
         self.file_dep = [source]
@@ -41,8 +45,4 @@ class Ants(spire.TaskFactory):
             ["rm", "-rf", temp]]
 
 def main():
-    return entrypoint(
-        Ants, [
-            ("--source", {"help": "Source time-series image"}),
-            ("--prefix", {"help": "Prefix of the target response files"}),
-        ])
+    return entrypoint(Ants)

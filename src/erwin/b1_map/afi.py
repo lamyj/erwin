@@ -14,6 +14,11 @@ class AFI(spire.TaskFactory):
     """
     
     def __init__(self, source, flip_angle, tr_ratio, target):
+        """ :param str source: Path to the magnitude image
+            :param float flip_angle: Flip angle (rad)
+            :param float tr_ratio: Ratio between the two TR
+            :param str target: Path to the target relative B1 map
+        """
         spire.TaskFactory.__init__(self, str(target))
         
         self.file_dep = [source]
@@ -36,9 +41,4 @@ class AFI(spire.TaskFactory):
             target_path)
         
 def main():
-    return entrypoint(
-        AFI, [
-            ("--source", {"help": "Magnitude data of the AFI sequence"}),
-            parsing.FlipAngle,
-            ("--tr-ratio", {"help": "Ratio between the two TR", "type": float}),
-            ("--target", {"help": "Path to the target B1 map"})])
+    return entrypoint(AFI)

@@ -13,6 +13,11 @@ class DoubleEcho(spire.TaskFactory):
     """
     
     def __init__(self, magnitude, phase, echo_times, target):
+        """ :param str magnitude: Path to magnitude image
+            :param str phase: Path to phase image (rad)
+            :param Sequence(float, 2) echo_times: Echo times (s)
+            :param str target: Path to target ΔB₀ map (Hz)
+        """
         spire.TaskFactory.__init__(self, str(target))
         
         self.file_dep = [magnitude, phase]
@@ -44,10 +49,4 @@ class DoubleEcho(spire.TaskFactory):
             nibabel.Nifti1Image(B0_map, magnitude.affine), B0_map_path)
 
 def main():
-    return entrypoint(
-        DoubleEcho, [
-            ("--magnitude", { "help": "Magnitude image"}),
-            ("--phase", {"help": "Phase image"}),
-            parsing.Multiple(parsing.EchoTimes, 2),
-            ("--target", {"help": "Target ΔB₀ map"})
-        ])
+    return entrypoint(DoubleEcho)

@@ -18,6 +18,19 @@ class MediL1(spire.TaskFactory):
     def __init__(
             self, magnitude, imaging_frequency, echo_times, total_field, 
             sd_noise, object_field, brain, ventricles, target, medi_toolbox):
+        """ :param str magnitude: Path to magnitude image
+            :param float imaging_frequency: Resonance frequency used by the \
+                scanner (Hz)
+            :param Sequence(float) echo_times,te: Echo times (s)
+            :param str total_field: Path to map of total susceptibility field
+            :param str sd_noise: Path map of standard deviation of noise in \
+                total susceptibility field
+            :param str object_field: Path to foreground susceptibility field
+            :param str brain: Path to binary brain mask
+            :param str ventricles: Path to binary ventricles mask
+            :param str target: Path to target susceptibility map
+            :param str medi_toolbox,medi: Path to the MEDI toolbox
+        """
         spire.TaskFactory.__init__(self, str(target))
         
         self.file_dep = [
@@ -88,21 +101,4 @@ class MediL1(spire.TaskFactory):
             nibabel.save(nibabel.Nifti1Image(QSM, magnitude.affine), target_path)
 
 def main():
-    return entrypoint(
-        MediL1, [
-            ("--magnitude", {"help": "Multi-echo magnitude image"}),
-            parsing.ImagingFrequency,
-            parsing.EchoTimes,
-            ("--total-field", {"help": "Total susceptibility field"}),
-            (
-                "--sd-noise", {
-                    "help": "Standard deviation of noise "
-                        "in total susceptibility field"}),
-            ("--object-field", {"help": "Foreground susceptibility field"}),
-            ("--brain", {"help": "Brain mask"}),
-            ("--ventricles", {"help": "Ventricles mask"}),
-            ("--target", {"help": "Total field image"}),
-            (
-                "--medi-toolbox", "--medi", {
-                    "dest": "medi_toolbox", 
-                    "help": "Path to the MEDI toolbox"})])
+    return entrypoint(MediL1)

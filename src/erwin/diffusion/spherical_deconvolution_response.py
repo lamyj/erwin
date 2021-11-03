@@ -9,6 +9,11 @@ class SphericalDeconvolutionResponse(spire.TaskFactory):
     """
     
     def __init__(self, source, prefix, mask=None):
+        """ :param str source: Path to the source diffusion-weighted image
+            :param str prefix: Prefix of the targets response files
+            :param Optional(str) mask: Path to the binary mask
+        """
+        
         spire.TaskFactory.__init__(self, prefix+"*.response")
         
         self.file_dep = [source]
@@ -25,8 +30,4 @@ class SphericalDeconvolutionResponse(spire.TaskFactory):
                 + [source] + (["-mask", mask] if mask else []) + self.targets]
 
 def main():
-    return entrypoint(
-        SphericalDeconvolutionResponse, [
-            ("--source", {"help": "Source DWI image"}),
-            ("--prefix", {"help": "Prefix of the target response files"}),
-            parsing.Optional(["--mask", {"help": "Binary mask"}])])
+    return entrypoint(SphericalDeconvolutionResponse)

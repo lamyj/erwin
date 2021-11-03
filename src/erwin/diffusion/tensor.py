@@ -11,6 +11,15 @@ class Tensor(spire.TaskFactory):
     def __init__(
             self, source, target, 
             mask=None, dkt=None, ols=False, iter=None, b0=None):
+        """ :param str source: Path to source diffusion-weighted image
+            :param str target: Path to target diffusion tensor image
+            :param Optional(str) mask: Path to binary mask
+            :param Optional(str) dkt: Path to target diffusion kurtosis image
+            :param Flag(True, False, True) ols: Perform initial fit with OLS
+            :param Optional(int) iter: Number of iterative reweightings
+            :param Optional(str) b0: Path to target estimated b=0 s/mm² image
+        """
+        
         spire.TaskFactory.__init__(self, str(target))
         self.file_dep = [source]
         if mask is not None:
@@ -26,19 +35,4 @@ class Tensor(spire.TaskFactory):
                 + [source, target]]
 
 def main():
-    return entrypoint(
-        Tensor, [
-            ("--source", {"help": "Source DWI image"}),
-            ("--target", {"help": "Target diffusion tensor image"}),
-            parsing.Optional(["--mask", {"help": "Binary mask"}]),
-            parsing.Optional(
-                ["--dkt", {"help": "Target diffusion kurtosis image"}]),
-            parsing.Optional(
-                [
-                    "--ols", {
-                        "action": "store_true",
-                        "help": "Perform initial fit with OLS"}]),
-            parsing.Optional(
-                ["--iter", {"help": "Number of iterative reweightings"}]),
-            parsing.Optional(
-                ["--b0", {"help": "Target estimated b=0 s/mm² image"}])])
+    return entrypoint(Tensor)

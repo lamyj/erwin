@@ -17,6 +17,13 @@ class pASL(spire.TaskFactory):
     """
     
     def __init__(self, source, echo_time, inversion_times, slice_time, target):
+        """ :param str source: Source ASL image
+            :param float echo_time: Echo time (s)
+            :param Sequence(float, 2) inversion_times: Inversion times (s)
+            :param str slice_time: Path to the slice time image, in the same frame as source
+            :param str target: Target CBF image (mL / 100 g / min)
+        """
+        
         spire.TaskFactory.__init__(self, str(target))
         
         self.file_dep = [source, slice_time]
@@ -86,13 +93,4 @@ class pASL(spire.TaskFactory):
         nibabel.save(nibabel.Nifti1Image(CBF, source.affine), str(target_path))
 
 def main():
-    return entrypoint(
-        pASL, [
-            ("--source", {"help": "Source ASL image"}),
-            parsing.EchoTime,
-            parsing.Multiple(parsing.InversionTimes, 2),
-            (
-                "--slice-time", {
-                    "help": "Slice time image, in the same frame as source"}),
-            ("--target", {"help": "Target CBF image"})
-        ])
+    return entrypoint(pASL)

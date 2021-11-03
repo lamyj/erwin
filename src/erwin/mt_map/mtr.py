@@ -12,6 +12,10 @@ class MTR(spire.TaskFactory):
     """
     
     def __init__(self, MT_off, MT_on, target):
+        """ :param str MT_off,mt-off: Path to image without MT pulse
+            :param str MT_on,mt-on: Path to image with MT pulse
+            :param str target: Path to target MTR map
+        """
         spire.TaskFactory.__init__(self, str(target))
         
         self.file_dep = [MT_off, MT_on]
@@ -39,8 +43,4 @@ class MTR(spire.TaskFactory):
         nibabel.save(nibabel.Nifti1Image(MTR, MT_off.affine), mtr_map_path)
 
 def main():
-    return entrypoint(
-        MTR, [
-            ("--MT-off", "--mt-off", {"help": "SPGR image without MT pulse"}),
-            ("--MT-on", "--mt-on", {"help": "SPGR image with MT pulse"}),
-            ("--target", {"help": "Path to the target MTR map"})])
+    return entrypoint(MTR)

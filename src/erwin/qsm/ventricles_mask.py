@@ -8,6 +8,12 @@ class VentriclesMask(spire.TaskFactory):
     """
     
     def __init__(self, r2_star, mask, target, medi_toolbox):
+        """ :param str r2_star: Path to source R2* image (Hz)
+            :param str mask: Path to binary mask
+            :param str target: Path to target binary ventricles mask
+            :param str medi_toolbox,medi: Path to the MEDI toolbox
+        """
+        
         spire.TaskFactory.__init__(self, str(target))
         self.file_dep = [r2_star, mask]
         self.targets = [target]
@@ -31,12 +37,4 @@ class VentriclesMask(spire.TaskFactory):
         nibabel.save(nibabel.Nifti1Image(mask, r2_star.affine), target_path)
 
 def main():
-    return entrypoint(
-        VentriclesMask, [
-            ("--r2-star", {"help": "R2* image"}),
-            ("--mask", {"help": "Mask image"}),
-            ("--target", {"help": "Ventricles mask"}),
-            (
-                "--medi-toolbox", "--medi", {
-                    "dest": "medi_toolbox", 
-                    "help": "Path to the MEDI toolbox"})])
+    return entrypoint(VentriclesMask)

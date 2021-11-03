@@ -12,6 +12,11 @@ class BackgroundFieldRemoval(spire.TaskFactory):
     """
     
     def __init__(self, f_total, mask, target, medi_toolbox, ):
+        """ :param str f_total: Path to total field map
+            :param str mask: Path to binary mask image
+            :param str target: Path to target object field image
+            :param str medi_toolbox,medi: Path to the MEDI toolbox
+        """
         spire.TaskFactory.__init__(self, str(target))
         
         self.file_dep = [f_total, mask]
@@ -41,12 +46,4 @@ class BackgroundFieldRemoval(spire.TaskFactory):
             nibabel.Nifti1Image(f_object, f_total_image.affine), target_path)
 
 def main():
-    return entrypoint(
-        BackgroundFieldRemoval, [
-            ("--f-total", {"help": "Total field image"}),
-            ("--mask", {"help": "Mask image"}),
-            ("--target", {"help": "Object field image"}),
-            (
-                "--medi-toolbox", "--medi", {
-                    "dest": "medi_toolbox", 
-                    "help": "Path to the MEDI toolbox"})])
+    return entrypoint(BackgroundFieldRemoval)

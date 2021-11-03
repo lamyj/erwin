@@ -2,7 +2,7 @@ import argparse
 import logging
 import subprocess
 
-def entrypoint(class_, arguments):
+def entrypoint(class_):
     """ Create a main-like function from a task class and a dictionary-based
         description of the command-line arguments. An option to set the 
         verbosity is automatically added.
@@ -13,9 +13,7 @@ def entrypoint(class_, arguments):
         "--verbosity", "-v", default="warning",
         choices=["debug", "info", "warning", "error", "critical"],
         help="Set the verbosity level (defaults to \"warning\")")
-    
-    for entry in arguments:
-        parsing.add_argument(parser, entry)
+    parsing.add_arguments(class_, parser)
     arguments = vars(parser.parse_args())
     
     logging.getLogger().setLevel(

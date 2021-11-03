@@ -17,6 +17,15 @@ class VFA(spire.TaskFactory):
     def __init__(
             self, sources, flip_angles, echo_time, repetition_time, B1_map,
             target):
+        """ :param Sequence(str, 2) sources: Path to source images
+            :param Sequence(float, 2) flip_angles: Flip angles of source \
+                images (rad)
+            :param float echo_time,te: Echo time (s)
+            :param float repetition_time,tr: Repetition time (s)
+            :param str B1_map,b1_map: Path to relative B₁ map
+            :param str target: Path to target T₁ map (s)
+        """
+        
         spire.TaskFactory.__init__(self, str(target))
         
         self.file_dep = [*sources, B1_map]
@@ -138,15 +147,4 @@ class VFA(spire.TaskFactory):
         return numpy.abs(echo)
 
 def main():
-    return entrypoint(
-        VFA, [
-            parsing.Multiple(
-                [
-                    "--sources",
-                    {"help": "SPGR images with different flip angles"}],
-                2),
-            parsing.Multiple(parsing.FlipAngles, 2),
-            parsing.EchoTime,
-            parsing.RepetitionTime,
-            ("--B1-map", "--b1-map", {"help": "B1 map in SPGR space"}),
-            ("--target", {"help": "Path to the target T1 map"})])
+    return entrypoint(VFA)

@@ -27,6 +27,19 @@ class SinglePoint(spire.TaskFactory):
             mt_flip_angle, mt_duration, mt_frequency_offset, 
             flip_angle, repetition_time,
             B0_map, B1_map, T1_map, MPF_map):
+        """ :param str MT_off,mt-off: Path to image without MT pulse
+            :param str MT_on,mt-on: Path to image with MT pulse
+            :param float mt_flip_angle: Flip angle of the MT pulse (rad)
+            :param float mt_duration: Duration of the MT pulse (s)
+            :param float mt_frequency_offset: Frequency offset of the MT pulse (Hz)
+            :param float flip_angle: Flip angle of the on-resonance pulse (rad)
+            :param float repetition_time,tr: Repetition time (s)
+            :param str B0_map: Path to the ΔB₀ map (Hz)
+            :param str B1_map: Path to the relative B₁ map
+            :param str T1_map: Path to the T₁ map (s)
+            :param str MPF_map,mpf-map: Path to target MPF map
+        """
+        
         spire.TaskFactory.__init__(self, str(MPF_map))
         
         self.B0_map = B0_map
@@ -205,23 +218,4 @@ class SinglePoint(spire.TaskFactory):
         return f
 
 def main():
-    return entrypoint(
-        SinglePoint, [
-            ("--MT-off", "--mt-off", {"help": "SPGR image without MT pulse"}),
-            ("--MT-on", "--mt-on", {"help": "SPGR image with MT pulse"}),
-            (
-                "--mt-flip-angle", {
-                    "type": float, "help": "Flip angle of the MT pulse (rad)"}),
-            (
-                "--mt-duration", {
-                    "type": float, "help": "Duration of the MT pulse (s)"}),
-            (
-                "--mt-frequency-offset", {
-                    "type": float,
-                    "help": "Frequency offset of the MT pulse (Hz)"}),
-            parsing.FlipAngle,
-            parsing.RepetitionTime,
-            ("--B0-map", "--b0-map", {"help": "B0 map in SPGR space"}),
-            ("--B1-map", "--b1-map", {"help": "B1 map in SPGR space"}),
-            ("--T1-map", "--t1-map", {"help": "T1 map in SPGR space"}),
-            ("--MPF-map", "--mpf-map", {"help": "Path to the target MPF map"})])
+    return entrypoint(SinglePoint)

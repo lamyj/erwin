@@ -5,7 +5,6 @@ import os
 import re
 import struct
 
-import dicomifier
 import numpy
 import spire
 
@@ -16,6 +15,10 @@ class SiemensToMIF(spire.TaskFactory):
     """
     
     def __init__(self, sources, target):
+        """ :param str source: Path to DWI data in Siemens format
+            :param str target: Path to target DWI image in MIF format
+        """
+        
         spire.TaskFactory.__init__(self, str(target))
     
         meta_data = [
@@ -50,6 +53,8 @@ class SiemensToMIF(spire.TaskFactory):
     
     @staticmethod
     def diffusion_scheme(meta_data_paths, scheme_path):
+        import dicomifier
+        
         scheme = []
         for path in meta_data_paths:
             with open(path) as fd:
@@ -61,6 +66,8 @@ class SiemensToMIF(spire.TaskFactory):
     
     @staticmethod
     def phase_encoding_scheme(meta_data_paths, scheme_path):
+        import dicomifier
+        
         scheme = []
         for path in meta_data_paths:
             with open(path) as fd:
@@ -105,10 +112,4 @@ class SiemensToMIF(spire.TaskFactory):
         numpy.savetxt(str(scheme_path), scheme)
 
 def main():
-    return entrypoint(
-        SiemensToMIF, [
-            parsing.Multiple([
-                "--sources", {"help": "Diffusion-weighted image"}]),
-            (
-                "--target",
-                {"help": "Path to the target DWI image in MIF format"})])
+    return entrypoint(SiemensToMIF)
