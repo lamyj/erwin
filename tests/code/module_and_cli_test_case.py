@@ -6,6 +6,8 @@ import sys
 import nibabel
 import numpy
 
+import erwin
+
 class ModuleAndCLITestCase(object):
     def __init__(self):
         self.data_path = os.path.join(
@@ -22,11 +24,7 @@ class ModuleAndCLITestCase(object):
     
     def test_module(self):
         task = self.class_(**self.arguments)
-        for action in task.actions:
-            if isinstance(action, list):
-                subprocess.check_call(action)
-            elif isinstance(action, tuple):
-                action[0](*action[1])
+        erwin.run([task])
         self._compare()
     
     def test_cli(self):

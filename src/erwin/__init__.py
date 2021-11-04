@@ -2,6 +2,17 @@ import argparse
 import logging
 import subprocess
 
+def run(tasks):
+    """ Run the given Spire tasks in order.
+    """
+    
+    for task in tasks:
+        for action in task.actions:
+            if isinstance(action, list):
+                subprocess.check_call(action)
+            elif isinstance(action, tuple):
+                action[0](*action[1])
+
 def entrypoint(class_):
     """ Create a main-like function from a task class and a dictionary-based
         description of the command-line arguments. An option to set the 
