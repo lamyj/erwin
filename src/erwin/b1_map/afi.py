@@ -15,26 +15,27 @@ class AFI(spire.TaskFactory):
     """
     
     def __init__(
-            self, source: str, flip_angle: float, tr_ratio: float, target: str):
-        """ :param source: Path to the magnitude image
+            self, sources: Tuple[str, str], flip_angle: float, tr_ratio: float,
+            target: str):
+        """ :param sources: Path to the magnitude images
             :param flip_angle: Flip angle (rad)
             :param tr_ratio: Ratio between the two TR
             :param target: Path to the target relative B1 map
         """
         spire.TaskFactory.__init__(self, str(target))
         
-        self.file_dep = [source]
+        self.file_dep = sources
         self.targets = [target]
         
-        self.actions = [(AFI.b1_map, (source, flip_angle, tr_ratio, target))]
+        self.actions = [(AFI.b1_map, (sources, flip_angle, tr_ratio, target))]
     
     @staticmethod
-    def b1_map(source_path, flip_angle, tr_ratio, target_path):
-        image = nibabel.load(source_path)
-        data = image.get_fdata()
+    def b1_map(sources_path, flip_angle, tr_ratio, target_path):
+        images = [nibabel.load(x) for x in sources_path]
+        data = [x.get_fdata() for x in images]
         
         with numpy.errstate(divide="ignore", invalid="ignore"):
-            r = data[..., 1] / data[..., 0]
+            r = data[1] / data[0]
         n = tr_ratio
         actual_fa = numpy.arccos((r*n - 1)/(n-r))
         
