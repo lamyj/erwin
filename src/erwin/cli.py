@@ -6,6 +6,7 @@ import docutils.frontend
 import docutils.nodes
 import docutils.parsers.rst
 import docutils.utils
+import sphinx.util.typing
 
 class Choice(object):
     """ Type hint corresponding to an enumeration
@@ -21,11 +22,27 @@ class Choice(object):
     
     def __class_getitem__(cls, key):
         return cls(key)
+    
+    @classmethod
+    def __str__(self):
+        return "foo"
 
 class Flag(object): 
     """ Type hint, equivalent to a boolean, corresponding to a command-line flag
     """
     pass
+
+original_stringify = sphinx.util.typing.stringify
+def stringify(annotation: typing.Any) -> str:
+    if isinstance(annotation, Choice):
+        return "{}[{}]".format(
+            annotation.__class__.__name__,
+            ", ".join(repr(x) for x in annotation.__args__))
+    elif annotation == Flag:
+        return original_stringify(typing.Optional[bool])
+    else:
+        return original_stringify(annotation)
+sphinx.util.typing.stringify = stringify
 
 def get_arguments(class_):
     """ Using the class docstring, and the type hints and docstring of the class

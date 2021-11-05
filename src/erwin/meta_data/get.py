@@ -43,6 +43,11 @@ def read_file(path):
     return data_set
 
 def get_meta_data(data_set, query):
+    """ Return meta-data from either a DICOM or a JSON data-set.
+        
+        :param data_set: DICOM or JSON data-set
+        :param query: Query path
+    """
     value = data_set
     parent_tag = None
     for item in query.split("."):

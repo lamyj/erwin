@@ -9,6 +9,7 @@ class pSSFP(spire.TaskFactory):
     """ Compute a map of T2 from pSSFP images.
         
         References:
+        
         - Factors controlling T2 mapping from partially spoiled SSFP sequence: 
           Optimization for skeletal muscle characterization. L. de Sousa et al.
           Magnetic Resonance in Medicine 67(5). 2012.

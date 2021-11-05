@@ -9,6 +9,7 @@ class ASLBOLDToASL(spire.TaskFactory):
     """ Separate ASL signal from ASL-BOLD based on Fourier analysis.
         
         References:
+        
         - Mapping resting-state functional connectivity using perfusion MRI.
           Chuang et al. NeuroImage 40(4). 2008.
         - Brain perfusion in dementia with Lewy bodies and Alzheimer’s disease: 

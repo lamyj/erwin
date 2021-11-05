@@ -9,6 +9,7 @@ class pASL(spire.TaskFactory):
     """ Compute the CBF based on a pASL from Siemens.
         
         References:
+        
         - Comparison of quantitative perfusion imaging using arterial spin 
           labeling at 1.5 and 4.0 Tesla. Wang et al. Magnetic Resonance in 
           Medicine 42(28). 2002.

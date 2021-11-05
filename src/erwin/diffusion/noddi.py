@@ -14,6 +14,7 @@ class NODDI(spire.TaskFactory):
     """ Fit the NODDI model using AMICO.
         
         References:
+        
         - NODDI: Practical in vivo neurite orientation dispersion and density 
           imaging of the human brain. Zhang et al. NeuroImage 61(4). 2012.
         - Accelerated Microstructure Imaging via Convex Optimization (AMICO) 
