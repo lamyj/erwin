@@ -8,7 +8,8 @@ import scipy.integrate
 import scipy.optimize
 import spire
 
-from .. import entrypoint, parsing
+from .. import entrypoint
+from ..cli import *
 
 import pyximport
 pyximport.install()
@@ -23,21 +24,21 @@ class SinglePoint(spire.TaskFactory):
     """
     
     def __init__(
-            self, MT_off, MT_on, 
-            mt_flip_angle, mt_duration, mt_frequency_offset, 
-            flip_angle, repetition_time,
-            B0_map, B1_map, T1_map, MPF_map):
-        """ :param str MT_off,mt-off: Path to image without MT pulse
-            :param str MT_on,mt-on: Path to image with MT pulse
-            :param float mt_flip_angle: Flip angle of the MT pulse (rad)
-            :param float mt_duration: Duration of the MT pulse (s)
-            :param float mt_frequency_offset: Frequency offset of the MT pulse (Hz)
-            :param float flip_angle: Flip angle of the on-resonance pulse (rad)
-            :param float repetition_time,tr: Repetition time (s)
-            :param str B0_map: Path to the ΔB₀ map (Hz)
-            :param str B1_map: Path to the relative B₁ map
-            :param str T1_map: Path to the T₁ map (s)
-            :param str MPF_map,mpf-map: Path to target MPF map
+            self, MT_off: str, MT_on: str, 
+            mt_flip_angle: float, mt_duration: float, mt_frequency_offset: float, 
+            flip_angle: float, repetition_time: float,
+            B0_map: str, B1_map: str, T1_map: str, MPF_map: str):
+        """ :param MT_off: Path to image without MT pulse
+            :param MT_on: Path to image with MT pulse
+            :param mt_flip_angle: Flip angle of the MT pulse (rad)
+            :param mt_duration: Duration of the MT pulse (s)
+            :param mt_frequency_offset: Frequency offset of the MT pulse (Hz)
+            :param flip_angle: Flip angle of the on-resonance pulse (rad)
+            :param repetition_time: Repetition time (s)
+            :param B0_map: Path to the ΔB₀ map (Hz)
+            :param B1_map: Path to the relative B₁ map
+            :param T1_map: Path to the T₁ map (s)
+            :param MPF_map: Path to target MPF map
         """
         
         spire.TaskFactory.__init__(self, str(MPF_map))
@@ -185,6 +186,7 @@ class SinglePoint(spire.TaskFactory):
         omega_1_rms = numpy.array_split(omega_1_rms.ravel(), chunks_count)
         G = numpy.array_split(G.ravel(), chunks_count)
         
+        # FIXME: dont' use fixed value
         with multiprocessing.Pool(4) as pool:
             f = pool.starmap(
                 SinglePoint.estimate_f_map_worker,
@@ -218,4 +220,7 @@ class SinglePoint(spire.TaskFactory):
         return f
 
 def main():
-    return entrypoint(SinglePoint)
+    return entrypoint(
+        SinglePoint, {
+            "MT_off": "mt_off", "MT_on": "mt_on", "repetition_time": "tr",
+            "MPF_map": "mpf_map"})

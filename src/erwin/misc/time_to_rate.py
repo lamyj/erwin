@@ -2,13 +2,20 @@ import nibabel
 import numpy
 import spire
 
-from .. import entrypoint, parsing
+from .. import entrypoint
+from ..cli import *
 
 class TimeToRate(spire.TaskFactory):
     """ Convert a relaxation time to a relaxation rate.
     """
     
-    def __init__(self, source, destination, range=None):
+    def __init__(
+            self, source: str, destination: str,
+            range: Optional[Tuple[float, float]]=None):
+        """ :param source: Path to source time map (s)
+            :param destination: Path to destination rate map (Hz)
+            :param range: Rate range outside which the result is clipped (Hz)
+        """
         spire.TaskFactory.__init__(self, str(destination))
         
         self.file_dep = [source]
@@ -25,11 +32,4 @@ class TimeToRate(spire.TaskFactory):
             nibabel.Nifti1Image(rate_array, time_image.affine), destination)
 
 def main():
-    return entrypoint(
-        TimeToRate, [
-            ("--source", {"help": "Source time map"}),
-            ("--destination", {"help": "Target rate map"}),
-            parsing.Optional([
-                "--range", {
-                    "help": "Clip range",
-                    "type": lambda x: [float(y) for y in x.split(",")]}])])
+    return entrypoint(TimeToRate)

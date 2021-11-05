@@ -1,17 +1,22 @@
 import spire
 
-from .. import entrypoint, parsing
+from .. import entrypoint
+from ..cli import *
 
 class TensorMetric(spire.TaskFactory):
     """ Maps of tensor-derived parameters
         
         This wraps tensor2metrix from MRtrix3.
     """
-    def __init__(self, source, kind, target, num=None, mask=None):
-        """ :param str source: Path to source DWI image
-            :param Choice(["adc", "fa", "ad", "rd", "value", "vector"]) kind: Metric kind
-            :param Optional(int) num: Desired eigenvalue or eigenvector
-            :param Optional(str) mask: Path to binary mask image
+    def __init__(
+            self, source: str, kind: Choice[
+                "adc", "fa", "ad", "rd", "value", "vector"
+            ], target: str, num: Optional[int]=None, mask: Optional[str]=None):
+        """ :param source: Path to source DWI image
+            :param kind: Metric kind
+            :param target: Path to target metric image
+            :param num: Desired eigenvalue or eigenvector
+            :param mask: Path to binary mask image
         """
         
         spire.TaskFactory.__init__(self, str(target))

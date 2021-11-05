@@ -3,7 +3,8 @@ import os
 import amico
 import spire
 
-from .. import entrypoint, parsing
+from .. import entrypoint
+from ..cli import *
 from .noddi import NODDI
 
 class NODDIResponses(spire.TaskFactory):
@@ -14,14 +15,15 @@ class NODDIResponses(spire.TaskFactory):
     """
     
     def __init__(
-            self, dwi, response_directory, 
-            shell_width=0, b0_threshold=0, lmax=12, ndirs=32761):
-        """ :param str dwi: Path to diffusion-weighted image, in MRtrix format
-            :param str response_directory: Path to target response directory
-            :param Optional(float, 0.) shell_width: Width used to group the real b-values in ideal shells (s/mm^2)
-            :param Optional(float, 0.) b0_threshold: Lower b-value threshold (s/mm^2)
-            :param Optional(float, 12.) lmax: Maximum order of spherical harmonics
-            :param Optional(float, 32761.) ndirs: Number of directions on the hemisphere
+            self, dwi: str, response_directory: str, 
+            shell_width: Optional[float]=0, b0_threshold: Optional[float]=0,
+            lmax: Optional[int]=12, ndirs: Optional[int]=32761):
+        """ :param dwi: Path to diffusion-weighted image, in MRtrix format
+            :param response_directory: Path to target response directory
+            :param shell_width: Width used to group the real b-values in ideal shells (s/mm^2)
+            :param b0_threshold: Lower b-value threshold (s/mm^2)
+            :param lmax: Maximum order of spherical harmonics
+            :param ndirs: Number of directions on the hemisphere
         """
         
         spire.TaskFactory.__init__(self, str(response_directory))

@@ -11,14 +11,15 @@ import numpy
 import spire
 
 from .. import entrypoint
+from ..cli import *
 
 class BrukerToMIF(spire.TaskFactory):
     """ Convert DWI data from Bruker to MIF format.
     """
     
-    def __init__(self, source, target):
-        """ :param str source: Path to DWI data in Bruker format
-            :param str target: Path to target DWI image in MIF format
+    def __init__(self, source: str, target: str):
+        """ :param source: Path to DWI data in Bruker format
+            :param target: Path to target DWI image in MIF format
         """
         
         spire.TaskFactory.__init__(self, str(target))

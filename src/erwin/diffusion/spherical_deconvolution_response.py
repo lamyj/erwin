@@ -1,6 +1,7 @@
 import spire
 
-from .. import entrypoint, parsing
+from .. import entrypoint
+from ..cli import *
 
 class SphericalDeconvolutionResponse(spire.TaskFactory):
     """ Estimation of WM, GM and CSF response functions.
@@ -8,10 +9,10 @@ class SphericalDeconvolutionResponse(spire.TaskFactory):
         This wraps "dwi2response dhollander" from MRtrix3.
     """
     
-    def __init__(self, source, prefix, mask=None):
-        """ :param str source: Path to the source diffusion-weighted image
-            :param str prefix: Prefix of the targets response files
-            :param Optional(str) mask: Path to the binary mask
+    def __init__(self, source: str, prefix: str, mask: Optional[str]=None):
+        """ :param source: Path to the source diffusion-weighted image
+            :param prefix: Prefix of the targets response files
+            :param mask: Path to the binary mask
         """
         
         spire.TaskFactory.__init__(self, prefix+"*.response")

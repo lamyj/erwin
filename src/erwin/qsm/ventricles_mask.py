@@ -2,16 +2,17 @@ import nibabel
 import spire
 
 from .. import entrypoint
+from ..cli import *
 
 class VentriclesMask(spire.TaskFactory):
     """ Compute a mas of the ventricles using the MEDI toolbox.
     """
     
-    def __init__(self, r2_star, mask, target, medi_toolbox):
-        """ :param str r2_star: Path to source R2* image (Hz)
-            :param str mask: Path to binary mask
-            :param str target: Path to target binary ventricles mask
-            :param str medi_toolbox,medi: Path to the MEDI toolbox
+    def __init__(self, r2_star: str, mask: str, target: str, medi_toolbox: str):
+        """ :param r2_star: Path to source R2* image (Hz)
+            :param mask: Path to binary mask
+            :param target: Path to target binary ventricles mask
+            :param medi_toolbox: Path to the MEDI toolbox
         """
         
         spire.TaskFactory.__init__(self, str(target))
@@ -37,4 +38,4 @@ class VentriclesMask(spire.TaskFactory):
         nibabel.save(nibabel.Nifti1Image(mask, r2_star.affine), target_path)
 
 def main():
-    return entrypoint(VentriclesMask)
+    return entrypoint(VentriclesMask, {"medi_toolbox": "medi"})

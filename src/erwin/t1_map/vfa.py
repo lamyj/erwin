@@ -4,7 +4,8 @@ import spire
 import sycomore
 from sycomore.units import *
 
-from .. import entrypoint, parsing
+from .. import entrypoint
+from ..cli import *
 
 class VFA(spire.TaskFactory):
     """ Compute the T1 map based on SPGR images acquired with a VFA scheme.
@@ -15,15 +16,14 @@ class VFA(spire.TaskFactory):
     """
     
     def __init__(
-            self, sources, flip_angles, echo_time, repetition_time, B1_map,
-            target):
-        """ :param Sequence(str, 2) sources: Paths to source images
-            :param Sequence(float, 2) flip_angles: Flip angles of source \
-                images (rad)
-            :param float echo_time,te: Echo time (s)
-            :param float repetition_time,tr: Repetition time (s)
-            :param str B1_map,b1_map: Path to relative B₁ map
-            :param str target: Path to target T₁ map (s)
+            self, sources: Tuple[str, str], flip_angles: Tuple[float, float],
+            echo_time: float, repetition_time: float, B1_map: str, target: str):
+        """ :param sources: Paths to source images
+            :param flip_angles: Flip angles of source images (rad)
+            :param echo_time: Echo time (s)
+            :param repetition_time: Repetition time (s)
+            :param B1_map: Path to relative B₁ map
+            :param target: Path to target T₁ map (s)
         """
         
         spire.TaskFactory.__init__(self, str(target))
@@ -147,4 +147,5 @@ class VFA(spire.TaskFactory):
         return numpy.abs(echo)
 
 def main():
-    return entrypoint(VFA)
+    return entrypoint(
+        VFA, {"echo_time": "te", "repetition_time": "tr", "B1_map": "b1_map"})

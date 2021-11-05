@@ -4,7 +4,8 @@ import nibabel
 import numpy
 import spire
 
-from .. import entrypoint, parsing
+from .. import entrypoint
+from ..cli import *
 
 class MediL1(spire.TaskFactory):
     """ Compute the QSM using the MEDI+0 method of the MEDI toolbox.
@@ -16,20 +17,20 @@ class MediL1(spire.TaskFactory):
     """
     
     def __init__(
-            self, magnitude, imaging_frequency, echo_times, total_field, 
-            sd_noise, object_field, brain, ventricles, target, medi_toolbox):
-        """ :param str magnitude: Path to magnitude image
-            :param float imaging_frequency: Resonance frequency used by the \
-                scanner (Hz)
-            :param Sequence(float) echo_times,te: Echo times (s)
-            :param str total_field: Path to map of total susceptibility field
-            :param str sd_noise: Path map of standard deviation of noise in \
-                total susceptibility field
-            :param str object_field: Path to foreground susceptibility field
-            :param str brain: Path to binary brain mask
-            :param str ventricles: Path to binary ventricles mask
-            :param str target: Path to target susceptibility map
-            :param str medi_toolbox,medi: Path to the MEDI toolbox
+            self, magnitude: str, imaging_frequency: float,
+            echo_times: Tuple[float, ...], total_field: str, 
+            sd_noise: str, object_field: str, brain: str, ventricles: str,
+            target: str, medi_toolbox: str):
+        """ :param magnitude: Path to magnitude image
+            :param imaging_frequency: Resonance frequency used by the scanner (Hz)
+            :param echo_times: Echo times (s)
+            :param total_field: Path to map of total susceptibility field
+            :param sd_noise: Path map of standard deviation of noise in total susceptibility field
+            :param object_field: Path to foreground susceptibility field
+            :param brain: Path to binary brain mask
+            :param ventricles: Path to binary ventricles mask
+            :param target: Path to target susceptibility map
+            :param medi_toolbox: Path to the MEDI toolbox
         """
         spire.TaskFactory.__init__(self, str(target))
         
@@ -101,4 +102,4 @@ class MediL1(spire.TaskFactory):
             nibabel.save(nibabel.Nifti1Image(QSM, magnitude.affine), target_path)
 
 def main():
-    return entrypoint(MediL1)
+    return entrypoint(MediL1, {"echo_times": "te", "medi_toolbox": "medi"})

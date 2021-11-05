@@ -2,7 +2,8 @@ import nibabel
 import numpy
 import spire
 
-from .. import entrypoint, parsing
+from .. import entrypoint
+from ..cli import *
 
 class bSSFP(spire.TaskFactory):
     """ Compute a map of T2 from bSSFP images.
@@ -13,16 +14,16 @@ class bSSFP(spire.TaskFactory):
     """
     
     def __init__(
-            self, sources, flip_angles, phase_increments, repetition_time,
-            B1_map, T1_map, target):
-        """ :param Sequence(str) sources: Paths to source images
-            :param Sequence(float) flip_angles: Flip angles (rad)
-            :param Sequence(float) phase_increments: Phase increment of the RF \
-                pulse in each source image (rad)
-            :param float repetition_time,tr: Repetition time (s)
-            :param str B1_map,b1_map: Relative B₁ map
-            :param str T1_map,t1_map: T₁ map (s)
-            :param str target: Path to the target T₂ map (s)
+            self, sources: Tuple[str, ...], flip_angles: Tuple[float, ...],
+            phase_increments: Tuple[float, ...], repetition_time: float,
+            B1_map: str, T1_map: str, target: str):
+        """ :param sources: Paths to source images
+            :param flip_angles: Flip angles (rad)
+            :param phase_increments: Phase increment of the RF pulse in each source image (rad)
+            :param repetition_time: Repetition time (s)
+            :param B1_map: Relative B₁ map
+            :param T1_map: T₁ map (s)
+            :param target: Path to the target T₂ map (s)
         """
         
         spire.TaskFactory.__init__(self, str(target))
@@ -90,4 +91,6 @@ class bSSFP(spire.TaskFactory):
             T2_map_path)
 
 def main():
-    return entrypoint(bSSFP)
+    return entrypoint(
+        bSSFP, {
+            "repetition_time": "tr", "B1_map": "b1_map", "T1_map": "t1_map"})

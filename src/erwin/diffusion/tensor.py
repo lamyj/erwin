@@ -1,6 +1,7 @@
 import spire
 
-from .. import entrypoint, parsing
+from .. import entrypoint
+from ..cli import *
 
 class Tensor(spire.TaskFactory):
     """ Diffusion and optional kurtosis tensor estimation.
@@ -9,15 +10,16 @@ class Tensor(spire.TaskFactory):
     """
     
     def __init__(
-            self, source, target, 
-            mask=None, dkt=None, ols=False, iter=None, b0=None):
-        """ :param str source: Path to source diffusion-weighted image
-            :param str target: Path to target diffusion tensor image
-            :param Optional(str) mask: Path to binary mask
-            :param Optional(str) dkt: Path to target diffusion kurtosis image
-            :param Flag(True, False, True) ols: Perform initial fit with OLS
-            :param Optional(int) iter: Number of iterative reweightings
-            :param Optional(str) b0: Path to target estimated b=0 s/mm² image
+            self, source: str, target: str, mask: Optional[str]=None,
+            dkt: Optional[str]=None, ols: Flag=False, iter: Optional[int]=None,
+            b0: Optional[str]=None):
+        """ :param source: Path to source diffusion-weighted image
+            :param target: Path to target diffusion tensor image
+            :param mask: Path to binary mask
+            :param dkt: Path to target diffusion kurtosis image
+            :param ols: Perform initial fit with OLS
+            :param iter: Number of iterative reweightings
+            :param b0: Path to target estimated b=0 s/mm² image
         """
         
         spire.TaskFactory.__init__(self, str(target))

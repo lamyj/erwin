@@ -2,7 +2,8 @@ import nibabel
 import numpy
 import spire
 
-from .. import entrypoint, parsing
+from .. import entrypoint
+from ..cli import *
 
 class pASL(spire.TaskFactory):
     """ Compute the CBF based on a pASL from Siemens.
@@ -16,12 +17,14 @@ class pASL(spire.TaskFactory):
           Resonance Imaging 34(4). 2011.
     """
     
-    def __init__(self, source, echo_time, inversion_times, slice_time, target):
-        """ :param str source: Source ASL image
-            :param float echo_time: Echo time (s)
-            :param Sequence(float, 2) inversion_times: Inversion times (s)
-            :param str slice_time: Path to the slice time image, in the same frame as source
-            :param str target: Target CBF image (mL / 100 g / min)
+    def __init__(
+            self, source: str, echo_time: float,
+            inversion_times: Tuple[float, float], slice_time: str, target: str):
+        """ :param source: Source ASL image
+            :param echo_time: Echo time (s)
+            :param inversion_times: Inversion times (s)
+            :param slice_time: Path to the slice time image, in the same frame as source
+            :param target: Target CBF image (mL / 100 g / min)
         """
         
         spire.TaskFactory.__init__(self, str(target))
@@ -93,4 +96,4 @@ class pASL(spire.TaskFactory):
         nibabel.save(nibabel.Nifti1Image(CBF, source.affine), str(target_path))
 
 def main():
-    return entrypoint(pASL)
+    return entrypoint(pASL, {"echo_time": "te", "inversion_times": "ti"})

@@ -6,37 +6,37 @@ import tempfile
 
 import spire
 
-from .. import entrypoint, parsing
+from .. import entrypoint
+from ..cli import *
 
 class BET(spire.TaskFactory):
     """ Brain extration using BET from FSL.
     """
     
     def __init__(
-            self, source, target, 
-            mask=None, skull=None, brain=True,
-            fractional_intensity_threshold=None, vertical_gradient=None, 
-            radius=None, center_of_gravity=None, thresholding=False, 
-            brain_mesh=None, variant=None):
-        """ :param str source: Path to source image
-            :param str target: Path to target brain image
-            :param Optional(str) mask: Path to target brain mask
-            :param Optional(str) skull: Path to target skull mask
-            :param Flag(False, True, True, "no") brain: Whether to store the brain image
-            :param Optional(float) fractional_intensity_threshold,f: \
-                Fractional intensity threshold
-            :param Optional(float) vertical_gradient,g: Vertical gradient
-            :param Optional(float) radius: Initial radius (mm)
-            :param Sequence(float, 3, True) center_of_gravity,cog: Center of \
-                gravity (voxels)
-            :param Flag(True, False, True) thresholding: Apply thresholding to \
-                segmented brain image and mask
-            :param Optional(str) brain_mesh: Path to target brain mesh
-            :param Choice(\
-                [\
-                    "robust", "optic", "neck", "small_fov", "fmri", \
-                    "additionnal_surfaces"], True) variant: \
-                Variations on default bet2 functionality
+            self, source: str, target: str, 
+            mask: Optional[str]=None, skull: Optional[str]=None,
+            no_brain: Flag=False,
+            fractional_intensity_threshold: Optional[float]=None,
+            vertical_gradient: Optional[float]=None, 
+            radius: Optional[float]=None,
+            center_of_gravity: Optional[Tuple[int,int,int]]=None,
+            thresholding: Flag=False, brain_mesh: Optional[str]=None,
+            variant: Optional[Choice[
+                "robust", "optic", "neck", "small_fov", "fmri",
+                "additionnal_surfaces"]]=None):
+        """ :param source: Path to source image
+            :param target: Path to target brain image
+            :param mask: Path to target brain mask
+            :param skull: Path to target skull mask
+            :param no_brain: Whether to store the brain image
+            :param fractional_intensity_threshold: Fractional intensity threshold
+            :param vertical_gradient: Vertical gradient
+            :param radius: Initial radius (mm)
+            :param center_of_gravity: Center of gravity (voxels)
+            :param thresholding: Apply thresholding to segmented brain image and mask
+            :param brain_mesh: Path to target brain mesh
+            :param variant: Variations on default bet2 functionality
         """
         
         self.targets = []
@@ -54,7 +54,7 @@ class BET(spire.TaskFactory):
         self.actions = [
             (
                 BET.bet, (
-                    source, target, mask, skull, brain,
+                    source, target, mask, skull, not no_brain,
                     fractional_intensity_threshold, vertical_gradient, radius,
                     center_of_gravity, thresholding, brain_mesh, variant))
         ]
@@ -130,4 +130,7 @@ class BET(spire.TaskFactory):
                 shutil.copy(temp_dir/"bet_mesh.vtk", brain_mesh)
 
 def main():
-    return entrypoint(BET)
+    return entrypoint(
+        BET, {
+            "fractional_intensity_threshold": "f", "vertical_gradient": "g",
+            "center_of_gravity": "cog"})

@@ -6,7 +6,8 @@ import nibabel
 import numpy
 import spire
 
-from .. import entrypoint, parsing
+from .. import entrypoint
+from ..cli import *
 from . import mif_io
 
 class NODDI(spire.TaskFactory):
@@ -20,20 +21,22 @@ class NODDI(spire.TaskFactory):
     """
     
     def __init__(
-            self, dwi, response_directory, principal_direction,
-            ic_vf, iso_vf, od, 
-            mask=None, shell_width=0, b0_threshold=0, lmax=12, ndirs=32761):
-        """ :param str dwi: Path to diffusion-weighted image, in MRtrix format
-            :param str response_directory: Path to response directory
-            :param str principal_direction: Path to principal direction map
-            :param str ic_vf: Path to target intra-cellular volume fraction map
-            :param str iso_vf: Path to target isotropic volume fraction map
-            :param str od: Path to target orientation dispersion map
-            :param Optional(str) mask: Path to mask image
-            :param Optional(float, 0.) shell_width: Width used to group the real b-values in ideal shells (s/mm^2)
-            :param Optional(float, 0.) b0_threshold: Lower b-value threshold (s/mm^2)
-            :param Optional(float, 12.) lmax: Maximum order of spherical harmonics
-            :param Optional(float, 32761.) ndirs: Number of directions on the hemisphere
+            self, dwi: str, response_directory: str, principal_direction: str,
+            ic_vf: str, iso_vf: str, od: str, 
+            mask: Optional[str]=None, shell_width: Optional[float]=0,
+            b0_threshold: Optional[float]=0, lmax: Optional[int]=12,
+            ndirs: Optional[int]=32761):
+        """ :param dwi: Path to diffusion-weighted image, in MRtrix format
+            :param response_directory: Path to response directory
+            :param principal_direction: Path to principal direction map
+            :param ic_vf: Path to target intra-cellular volume fraction map
+            :param iso_vf: Path to target isotropic volume fraction map
+            :param od: Path to target orientation dispersion map
+            :param mask: Path to mask image
+            :param shell_width: Width used to group the real b-values in ideal shells (s/mm^2)
+            :param b0_threshold: Lower b-value threshold (s/mm^2)
+            :param lmax: Maximum order of spherical harmonics
+            :param ndirs: Number of directions on the hemisphere
         """
         
         spire.TaskFactory.__init__(self, str(ic_vf))

@@ -5,7 +5,8 @@ import pydicom
 import sycomore
 
 from . import siemens
-from .. import entrypoint, parsing
+from .. import entrypoint
+from ..cli import *
 
 units = {
     x:y for x,y in vars(sycomore.units).items()
@@ -96,10 +97,10 @@ def parse_unit(unit_string):
 class Getter(object):
     """Print the value of a meta-data item."""
     
-    def __init__(self, path, query, unit=None):
-        """ :param str path,p: Path to meta-data file
-            :param str query,q: Meta-data query
-            :param Optional(str) unit,u: Implicit unit of meta-data
+    def __init__(self, path: str, query: str, unit: Optional[str]=None):
+        """ :param path: Path to meta-data file
+            :param query: Meta-data query
+            :param unit: Implicit unit of meta-data
         """
         self.actions = [(Getter.get, (path, query, unit))]
     
@@ -109,4 +110,4 @@ class Getter(object):
         print(value)
 
 def main():
-    return entrypoint(Getter)
+    return entrypoint(Getter, {"path": "p", "query": "q", "unit": "u"})

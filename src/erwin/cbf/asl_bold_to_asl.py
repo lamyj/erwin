@@ -2,7 +2,8 @@ import nibabel
 import numpy
 import spire
 
-from .. import entrypoint, parsing
+from .. import entrypoint
+from ..cli import *
 
 class ASLBOLDToASL(spire.TaskFactory):
     """ Separate ASL signal from ASL-BOLD based on Fourier analysis.
@@ -15,11 +16,13 @@ class ASLBOLDToASL(spire.TaskFactory):
           stages. Roquet et al. Alzheimer's Research & Therapy 8(1). 2016.
     """
     
-    def __init__(self, source, repetition_time, target, cutoff_frequency=0.1125):
-        """ :param str source: Path to source ASL-BOLD image
-            :param float repetition_time: Repetition time (s)
-            :param str target: Path to target ASL image
-            :param Optional(float, 0.1125) cutoff_frequency: Cut-off frequency between ASL and BOLD (Hz)
+    def __init__(
+            self, source:str, repetition_time: float, target: str, 
+            cutoff_frequency: Optional[float]=0.1125):
+        """ :param source: Path to source ASL-BOLD image
+            :param repetition_time: Repetition time (s)
+            :param target: Path to target ASL image
+            :param cutoff_frequency: Cut-off frequency between ASL and BOLD (Hz)
         """
         spire.TaskFactory.__init__(self, str(target))
         
@@ -53,4 +56,4 @@ class ASLBOLDToASL(spire.TaskFactory):
             nibabel.Nifti1Image(target_array, source.affine), target_path)
 
 def main():
-    return entrypoint(ASLBOLDToASL)
+    return entrypoint(ASLBOLDToASL, {"repetition_time": "tr"})

@@ -6,16 +6,19 @@ import numpy
 import spire
 
 from .. import entrypoint
+from ..cli import *
 
 class ApplyAnts(spire.TaskFactory):
     """ Apply a 4D motion-correction estimated by ANTs to a time series.
     """
     
-    def __init__(self, time_series, transforms, reference, target):
-        """ :param str time_series: Path to source time series
-            :param str transforms: Path to 4D motion-correction transform image
-            :param str reference: Path to reference time-series defining the geometry
-            :param str target: Path to target time series
+    def __init__(
+            self, time_series: str, transforms: str, reference: str,
+            target: str):
+        """ :param time_series: Path to source time series
+            :param transforms: Path to 4D motion-correction transform image
+            :param reference: Path to reference time-series defining the geometry
+            :param target: Path to target time series
         """
         
         spire.TaskFactory.__init__(self, str(target))

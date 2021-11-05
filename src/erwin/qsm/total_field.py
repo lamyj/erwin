@@ -6,18 +6,20 @@ import numpy
 import spire
 
 from .. import entrypoint
+from ..cli import *
 
 class TotalField(spire.TaskFactory):
     """ Unwrapping and total susceptibility field of the MEDI toolbox.
     """
     
-    def __init__(self, magnitude, phase, f_total, medi_toolbox, sd_noise=None):
-        """ :param str magnitude: Path to source magnitude images
-            :param str phase: Path to source phase images
-            :param str f_total: Path to target total field image
-            :param str medi_toolbox,medi: Path to the MEDI toolbox
-            :param Optional(str) sd_noise: Path to target map of standard \
-                deviation of noise in total susceptibility field
+    def __init__(
+            self, magnitude: str, phase: str, f_total: str, medi_toolbox: str,
+            sd_noise: Optional[str]=None):
+        """ :param magnitude: Path to source magnitude images
+            :param phase: Path to source phase images
+            :param f_total: Path to target total field image
+            :param medi_toolbox: Path to the MEDI toolbox
+            :param sd_noise: Path to target map of standard deviation of noise in total susceptibility field
         """
         
         spire.TaskFactory.__init__(self, str(f_total))
@@ -66,4 +68,4 @@ class TotalField(spire.TaskFactory):
                 sd_noise_path)
 
 def main():
-    return entrypoint(TotalField)
+    return entrypoint(TotalField, {"medi_toolbox": "medi"})

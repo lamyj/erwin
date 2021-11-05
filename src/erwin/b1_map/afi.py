@@ -2,7 +2,8 @@ import nibabel
 import numpy
 import spire
 
-from .. import entrypoint, parsing
+from .. import entrypoint
+from ..cli import *
 
 class AFI(spire.TaskFactory):
     """ Relative B1 map from an AFI sequence.
@@ -13,11 +14,12 @@ class AFI(spire.TaskFactory):
         2007.
     """
     
-    def __init__(self, source, flip_angle, tr_ratio, target):
-        """ :param str source: Path to the magnitude image
-            :param float flip_angle: Flip angle (rad)
-            :param float tr_ratio: Ratio between the two TR
-            :param str target: Path to the target relative B1 map
+    def __init__(
+            self, source: str, flip_angle: float, tr_ratio: float, target: str):
+        """ :param source: Path to the magnitude image
+            :param flip_angle: Flip angle (rad)
+            :param tr_ratio: Ratio between the two TR
+            :param target: Path to the target relative B1 map
         """
         spire.TaskFactory.__init__(self, str(target))
         

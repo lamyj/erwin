@@ -2,7 +2,8 @@ import nibabel
 import numpy
 import spire
 
-from .. import entrypoint, parsing
+from .. import entrypoint
+from ..cli import *
 
 class DoubleEcho(spire.TaskFactory):
     """ ΔB₀ map (in Hz) using the phase difference between two echoes.
@@ -12,12 +13,15 @@ class DoubleEcho(spire.TaskFactory):
         34(6), pp. 898-904. 1995. doi:10.1002/mrm.1910340616
     """
     
-    def __init__(self, magnitude, phase, echo_times, target):
-        """ :param Sequence(str, 2) magnitude: Path to magnitude images
-            :param Sequence(str, 2) phase: Path to phase images (rad)
-            :param Sequence(float, 2) echo_times: Echo times (s)
-            :param str target: Path to target ΔB₀ map (Hz)
+    def __init__(self, 
+            magnitude: Tuple[str,str], phase: Tuple[str,str],
+            echo_times: Tuple[float,float], target: str):
+        """ :param magnitude: Path to magnitude images
+            :param phase: Path to phase images
+            :param echo_times: Echo times (s)
+            :param target: Path to target ΔB₀ map (Hz)
         """
+        
         spire.TaskFactory.__init__(self, str(target))
         
         self.file_dep = [*magnitude, *phase]
@@ -51,4 +55,4 @@ class DoubleEcho(spire.TaskFactory):
             nibabel.Nifti1Image(B0_map, magnitude[0].affine), B0_map_path)
 
 def main():
-    return entrypoint(DoubleEcho)
+    return entrypoint(DoubleEcho, {"echo_times": "te"})

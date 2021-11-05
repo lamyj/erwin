@@ -1,7 +1,8 @@
 import nibabel
 import spire
 
-from .. import entrypoint, parsing
+from .. import entrypoint
+from ..cli import *
 
 class R2Star(spire.TaskFactory):
     """ Compute the R2* map (in Hz)
@@ -11,11 +12,13 @@ class R2Star(spire.TaskFactory):
         Magnetic Resonance in Medicine 73(2). 2015.
     """
     
-    def __init__(self, source, echo_times, target, medi_toolbox):
-        """ :param str source: Path to source magnitude image
-            :param Sequence(float) echo_times,te: Echo times (s)
-            :param str target: Path to R2* map (Hz)
-            :param str medi_toolbox,medi: Path to the MEDI toolbox
+    def __init__(
+            self, source: str, echo_times: Tuple[float, ...], target: str,
+            medi_toolbox: str):
+        """ :param source: Path to source magnitude image
+            :param echo_times: Echo times (s)
+            :param target: Path to R2* map (Hz)
+            :param medi_toolbox: Path to the MEDI toolbox
         """
         spire.TaskFactory.__init__(self, str(target))
         
@@ -41,4 +44,4 @@ class R2Star(spire.TaskFactory):
         nibabel.save(nibabel.Nifti1Image(R2_star, source.affine), target_path)
 
 def main():
-    return entrypoint(R2Star)
+    return entrypoint(R2Star, {"echo_times": "te", "medi_toolbox": "medi"})

@@ -3,14 +3,15 @@ import os
 import spire
 
 from .. import entrypoint
+from ..cli import *
 
 class Ants(spire.TaskFactory):
     """ ANTs-base motion correction.
     """
     
-    def __init__(self, source, prefix):
-        """ :param str source: Path to source time-series image
-            :param str prefix: Prefix of the target files
+    def __init__(self, source: str, prefix: str):
+        """ :param source: Path to source time-series image
+            :param prefix: Prefix of the target files
         """
         
         spire.TaskFactory.__init__(self, str(prefix))

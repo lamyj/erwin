@@ -3,6 +3,7 @@ import itertools
 import spire
 
 from .. import entrypoint
+from ..cli import *
 
 class SphericalHarmonics(spire.TaskFactory):
     """ Perform multi-shell multi-tissue CSD.
@@ -10,11 +11,13 @@ class SphericalHarmonics(spire.TaskFactory):
         This wraps dwi2fod msmt_csd from MRtrix3.
     """
     
-    def __init__(self, source, global_response, prefix, mask=None):
-        """ :param str source: Path to the source diffusion-weighted image
-            :param Sequence(str) global_response: Path to the single-fiber response files
-            :param str prefix: Prefix of the target harmonics files
-            :param Optional(str) mask: Path to the binary mask
+    def __init__(
+            self, source: str, global_response: Tuple[str, ...], prefix=str,
+            mask: Optional[str]=None):
+        """ :param source: Path to the source diffusion-weighted image
+            :param global_response: Path to the single-fiber response files
+            :param prefix: Prefix of the target harmonics files
+            :param mask: Path to the binary mask
         """
         
         spire.TaskFactory.__init__(self, prefix+"*.mif.gz")

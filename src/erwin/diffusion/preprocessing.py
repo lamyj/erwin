@@ -4,6 +4,7 @@ import subprocess
 import spire
 
 from .. import entrypoint
+from ..cli import *
 
 class Preprocessing(spire.TaskFactory):
     """ Preprocess a diffusion-weighted image using MRtrix.
@@ -14,9 +15,9 @@ class Preprocessing(spire.TaskFactory):
         information and diffusion-encoding scheme).
     """
     
-    def __init__(self, source, target):
-        """ :param str source: Path to source diffusion-weighted image
-            :param str target: Path to the target preprocessed DWI image
+    def __init__(self, source: str, target: str):
+        """ :param source: Path to source diffusion-weighted image
+            :param target: Path to the target preprocessed DWI image
         """
         
         spire.TaskFactory.__init__(self, str(target))

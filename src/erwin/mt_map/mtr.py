@@ -3,6 +3,7 @@ import numpy
 import spire
 
 from .. import entrypoint
+from ..cli import *
 
 class MTR(spire.TaskFactory):
     """ Compute the MT ratio of two images.
@@ -11,10 +12,10 @@ class MTR(spire.TaskFactory):
         before computing the ratio.
     """
     
-    def __init__(self, MT_off, MT_on, target):
-        """ :param str MT_off,mt-off: Path to image without MT pulse
-            :param str MT_on,mt-on: Path to image with MT pulse
-            :param str target: Path to target MTR map
+    def __init__(self, MT_off: str, MT_on: str, target: str):
+        """ :param MT_off: Path to image without MT pulse
+            :param MT_on: Path to image with MT pulse
+            :param target: Path to target MTR map
         """
         spire.TaskFactory.__init__(self, str(target))
         
@@ -43,4 +44,4 @@ class MTR(spire.TaskFactory):
         nibabel.save(nibabel.Nifti1Image(MTR, MT_off.affine), mtr_map_path)
 
 def main():
-    return entrypoint(MTR)
+    return entrypoint(MTR, {"MT_off": "mt_off", "MT_on": "mt_on"})

@@ -1,6 +1,7 @@
 import spire
 
 from .. import entrypoint
+from ..cli import *
 
 class MeanResponse(spire.TaskFactory):
     """ Average ODF response functions.
@@ -8,9 +9,9 @@ class MeanResponse(spire.TaskFactory):
         This wraps responsemean from MRtrix3.
     """
     
-    def __init__(self, sources, target):
-        """ :param Sequence(str) sources: Path to source responses
-            :param str target: Path to target average response
+    def __init__(self, sources: Tuple[str, ...], target: str):
+        """ :param sources: Path to source responses
+            :param target: Path to target average response
         """
         
         spire.TaskFactory.__init__(self, str(target))

@@ -3,6 +3,7 @@ import numpy
 import spire
 
 from .. import entrypoint
+from ..cli import *
 
 class BackgroundFieldRemoval(spire.TaskFactory):
     """ Background field removal using the LBV method of the MEDI toolbox.
@@ -11,11 +12,11 @@ class BackgroundFieldRemoval(spire.TaskFactory):
         value problem. Zhou et al. NMR in Biomedicine 27(3). 2014.
     """
     
-    def __init__(self, f_total, mask, target, medi_toolbox, ):
-        """ :param str f_total: Path to total field map
-            :param str mask: Path to binary mask image
-            :param str target: Path to target object field image
-            :param str medi_toolbox,medi: Path to the MEDI toolbox
+    def __init__(self, f_total: str, mask: str, target: str, medi_toolbox: str):
+        """ :param f_total: Path to total field map
+            :param mask: Path to binary mask image
+            :param target: Path to target object field image
+            :param medi_toolbox: Path to the MEDI toolbox
         """
         spire.TaskFactory.__init__(self, str(target))
         
@@ -46,4 +47,4 @@ class BackgroundFieldRemoval(spire.TaskFactory):
             nibabel.Nifti1Image(f_object, f_total_image.affine), target_path)
 
 def main():
-    return entrypoint(BackgroundFieldRemoval)
+    return entrypoint(BackgroundFieldRemoval, {"medi_toolbox": "medi"})

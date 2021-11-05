@@ -1,6 +1,7 @@
 import os
 import spire
-from .. import entrypoint, parsing
+from .. import entrypoint
+from ..cli import *
 
 class FODSegmentation(spire.TaskFactory):
     """ Segmentation of Fibre Orientation Distributions to fixels.
@@ -8,12 +9,14 @@ class FODSegmentation(spire.TaskFactory):
         This wraps fod2fixel from MRtrix3.
     """
     
-    def __init__(self, fod, fixel_directory, afd=None, peak_amp=None, disp=None):
-        """ :param str fod: Path to FOD image
-            :param str fixel_directory: Path to target fixel directory
-            :param Optional(str) afd: Path to apparent fiber density map
-            :param Optional(str) peak_amp: Path to map of the maximal FOD peak
-            :param Optional(str) disp: Path to dispersion map
+    def __init__(
+            self, fod: str, fixel_directory: str, afd: Optional[str]=None,
+            peak_amp: Optional[str]=None, disp: Optional[str]=None):
+        """ :param fod: Path to FOD image
+            :param fixel_directory: Path to target fixel directory
+            :param afd: Path to apparent fiber density map
+            :param peak_amp: Path to map of the maximal FOD peak
+            :param disp: Path to dispersion map
         """
         
         spire.TaskFactory.__init__(self, str(fixel_directory))

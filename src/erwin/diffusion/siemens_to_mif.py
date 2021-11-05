@@ -8,15 +8,16 @@ import struct
 import numpy
 import spire
 
-from .. import entrypoint, parsing
+from .. import entrypoint
+from ..cli import *
 
 class SiemensToMIF(spire.TaskFactory):
     """ Convert DWI data from Siemens to MIF format.
     """
     
-    def __init__(self, sources, target):
-        """ :param str source: Path to DWI data in Siemens format
-            :param str target: Path to target DWI image in MIF format
+    def __init__(self, sources: Tuple[str, ...], target: str):
+        """ :param sources: Path to DWI data in Siemens format
+            :param target: Path to target DWI image in MIF format
         """
         
         spire.TaskFactory.__init__(self, str(target))
