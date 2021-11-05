@@ -64,7 +64,7 @@ setuptools.setup(
     package_dir={"": "src"},
     ext_modules=[mpf_extension],
     
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     
     setup_requires=["cython"],
     cmdclass={"build": build},
