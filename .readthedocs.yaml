@@ -6,3 +6,9 @@ build:
     - gfortran
     - libblas-dev
     - liblapack-dev
+
+python:
+  version: 3.9
+  install:
+    - method: pip
+      path: .
