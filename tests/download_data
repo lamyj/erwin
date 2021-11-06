@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -e
+
+cd $(dirname $0)/data
+curl -k -L -o erwin-data.zip --silent --show-error \
+  https://iris.icube.unistra.fr/nextcloud/s/iYX7pgHNeAp7FF6/download
+unzip -q erwin-data.zip
+rm erwin-data.zip
+cd $OLDPWD
