@@ -1,3 +1,5 @@
+import gzip
+import inspect
 import itertools
 import os
 import subprocess
@@ -34,18 +36,35 @@ class ModuleAndCLITestCase(object):
                 (
                     ModuleAndCLITestCase._to_cli(name),
                     *ModuleAndCLITestCase._to_string(value))
-                for name, value in self.arguments.items())])
+                for name, value in self.arguments.items()
+                if value is not inspect.Parameter.empty),
+            *[
+                ModuleAndCLITestCase._to_cli(name)
+                for name, value in self.arguments.items()
+                if value is inspect.Parameter.empty]])
         self._compare()
     
     def _compare(self):
-        baseline = nibabel.load(self.baseline)
-        result = nibabel.load(self.result)
+        baseline, baseline_header = ModuleAndCLITestCase.load(self.baseline)
+        result, result_header = ModuleAndCLITestCase.load(self.result)
         
         numpy.testing.assert_allclose(baseline.affine, result.affine)
         numpy.testing.assert_allclose(
             numpy.array(result.dataobj), numpy.array(baseline.dataobj),
             equal_nan=True)
         
+        self.assertEqual(baseline_header is not None, result_header is not None)
+        if baseline_header is not None:
+            name = b"dw_scheme"
+            self.assertEqual(name in baseline_header, name in result_header)
+            if name in baseline_header:
+                baseline_value = baseline_header[name]
+                result_value = result_header[name]
+                numpy.testing.assert_allclose(baseline_value, result_value)
+            
+            name = b"pe_scheme"
+            self.assertEqual(name in baseline_header, name in result_header)
+            self.assertTrue(all(baseline_header[name] == result_header[name]))
     
     @staticmethod
     def _to_cli(name):
@@ -57,3 +76,14 @@ class ModuleAndCLITestCase(object):
             return [ModuleAndCLITestCase._to_string(x)[0] for x in value]
         else:
             return [str(value)]
+    
+    @staticmethod
+    def load(path):
+        if path.endswith(".nii.gz") or path.endswith(".nii"):
+            return nibabel.load(path), None
+        elif path.endswith(".mif"):
+            with open(path, "rb") as fd:
+                return erwin.diffusion.mif_io.read(fd)
+        elif path.endswith(".mif.gz"):
+            with gzip.open(path, "rb") as fd:
+                return erwin.diffusion.mif_io.read(fd)
