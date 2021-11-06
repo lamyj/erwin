@@ -82,7 +82,6 @@ def get_argument(name, type_, args, default, help):
     
     argument = None
     if type_ is Flag:
-        print(name, type_, args, default, help)
         argument = get_argument(name, bool, None, default, help)
         del argument[1]["type"]
         argument[1]["required"] = False
@@ -117,8 +116,7 @@ def get_argument(name, type_, args, default, help):
         argument = get_argument(
             name, type(args[0]), None, inspect.Parameter.empty, help)
         argument[1]["choices"] = args
-    else:
-        print("Unknown", name, type_, args)
+    
     return argument
 
 def get_param_fields(class_):
