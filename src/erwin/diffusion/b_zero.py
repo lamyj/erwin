@@ -12,7 +12,7 @@ class BZero(spire.TaskFactory):
             :param target: Path to target 4D image of all b=0 volumes
             :param average: Compute average of all b=0 volumes
         """
-        print(source, target, average)
+        
         spire.TaskFactory.__init__(self, str(target))
         self.file_dep = [source]
         self.targets = [target]
