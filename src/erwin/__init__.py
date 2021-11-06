@@ -36,7 +36,19 @@ def entrypoint(class_, aliases=None):
                     names.append("-{}".format(alias))
                 else:
                     names.append("--{}".format(alias.replace("_", "-")))
-        parser.add_argument(*names, **options)
+        
+        action = parser.add_argument(*names, **options)
+        nargs = action.nargs if action.nargs is not None or action.choices else 1
+        if nargs == 1:
+            action.metavar = names[0].lstrip("-")[0].upper()
+        elif isinstance(nargs, int) and nargs > 1:
+            action.metavar = tuple(
+                "{}{}".format(names[0].lstrip("-")[0].upper(), x)
+                for x in range(1, nargs+1))
+        elif nargs == "+":
+            action.metavar = tuple(
+                "{}{}".format(names[0].lstrip("-")[0].upper(), x)
+                for x in range(1, 3))
     arguments = vars(parser.parse_args())
     
     logging.getLogger().setLevel(
