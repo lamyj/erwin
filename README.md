@@ -89,7 +89,7 @@ T1_map = erwin.t1_map.VFA(
 
 Note that re-running doit will not re-run the tasks: since neither the original images nor the code have been modified, everything is up-to-date. Refer to the [doit][] documentation for more details about running tasks.
 
-The complete API is available in the [main documentation](https://erwin.readthedocs.io).
+The complete API is available in the [main documentation](https://erwin.readthedocs.io/en/latest/methods/index.html).
 
 [ANTs]: https://github.com/ANTsX/ANTs
 [Cython]: https://cython.org/
@@ -99,4 +99,4 @@ The complete API is available in the [main documentation](https://erwin.readthed
 [MRtrix]: https://www.mrtrix.org/
 [pip]: https://pip.pypa.io/en/stable/
 [PyPi]: https://pypi.org/
-[spire]: https://github.com/lamyj/spire
+[Spire]: https://github.com/lamyj/spire
