@@ -112,7 +112,7 @@ def run(module_name, arguments):
     
     return return_code
 
-def get_doc(class_, _):
+def get_doc(class_, _=None):
     """ Return the first paragraph of the specified class docstring.
     """
     
