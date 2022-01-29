@@ -21,7 +21,11 @@ def get(path, query, unit=None):
     value = get_meta_data(data_set, query)
     
     if unit is not None:
-        value *= parse_unit(unit).magnitude
+        factor = parse_unit(unit).magnitude
+        if isinstance(value, (list, tuple)):
+            value = [x*factor for x in value]
+        else:
+            value *= factor
     
     return value
 
