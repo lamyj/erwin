@@ -39,6 +39,8 @@ class BET(spire.TaskFactory):
             :param variant: Variations on default bet2 functionality
         """
         
+        brain = not no_brain
+        
         self.targets = []
         if brain:
             self.targets.append(target)
@@ -54,7 +56,7 @@ class BET(spire.TaskFactory):
         self.actions = [
             (
                 BET.bet, (
-                    source, target, mask, skull, not no_brain,
+                    source, target, mask, skull, brain,
                     fractional_intensity_threshold, vertical_gradient, radius,
                     center_of_gravity, thresholding, brain_mesh, variant))
         ]
