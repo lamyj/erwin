@@ -6,6 +6,7 @@ import re
 import struct
 import tempfile
 
+import dicomifier
 import nibabel
 import numpy
 import spire
@@ -67,7 +68,7 @@ class BrukerToMIF(spire.TaskFactory):
             meta_data = json.load(fd)
         
         bruker_data = json.loads(
-            base64.b64decode(meta_data["EncapsulatedDocument"][0]))
+            base64.b64decode(meta_data["EncapsulatedDocument"][0]).strip(b" \0"))
         
         # acqp = dicomifier.bruker.Dataset()
         # with tempfile.NamedTemporaryFile("w") as fd:
