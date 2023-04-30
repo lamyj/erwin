@@ -29,7 +29,6 @@ class SphericalHarmonics(spire.TaskFactory):
         
         if algorithm == "csd":
             response = (response, )
-        print(source, response, target, mask, algorithm)
         self.file_dep = [source, *response]
         if mask is not None:
             self.file_dep.append(mask)
