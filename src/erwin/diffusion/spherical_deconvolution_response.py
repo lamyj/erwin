@@ -1,3 +1,5 @@
+import os
+
 import spire
 
 from .. import entrypoint
@@ -20,7 +22,8 @@ class SphericalDeconvolutionResponse(spire.TaskFactory):
         
         spire.TaskFactory.__init__(
             self,
-            str(target+"wm.response" if algorithm=="dhollander" else target))
+            os.path.join(target, "wm.response") if algorithm=="dhollander"
+                else str(target))
         
         self.file_dep = [source]
         if mask is not None:

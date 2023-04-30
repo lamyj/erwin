@@ -1,4 +1,5 @@
 import itertools
+import os
 
 import spire
 
@@ -8,31 +9,41 @@ from ..cli import *
 class SphericalHarmonics(spire.TaskFactory):
     """ Perform multi-shell multi-tissue CSD.
         
-        This wraps dwi2fod msmt_csd from MRtrix3.
+        This wraps dwi2fod from MRtrix3.
     """
     
     def __init__(
-            self, source: str, global_response: Tuple[str, ...], prefix=str,
-            mask: Optional[str]=None):
+            self, source: str, response: Tuple[str, ...], target=str,
+            mask: Optional[str]=None,
+            algorithm: Optional[Choice["csd", "msmt_csd"]]="msmt_csd"):
         """ :param source: Path to the source diffusion-weighted image
-            :param global_response: Path to the single-fiber response files
-            :param prefix: Prefix of the target harmonics files
+            :param response: Path to the single-fiber response file(s)
+            :param target: Prefix (msmt_csd) or path (csd) to the harmonics files
             :param mask: Path to the binary mask
         """
         
-        spire.TaskFactory.__init__(self, prefix+"*.mif.gz")
+        spire.TaskFactory.__init__(
+            self,
+            os.path.join(target, "wm.mif.gz") if algorithm=="msmt_csd"
+                else str(target))
         
-        self.file_dep = [source, *global_response]
+        if algorithm == "csd":
+            response = (response, )
+        print(source, response, target, mask, algorithm)
+        self.file_dep = [source, *response]
         if mask is not None:
             self.file_dep.append(mask)
         
-        self.targets = [
-            "{}{}.mif.gz".format(prefix, x) for x in ["wm", "gm", "csf"]]
+        if algorithm == "msmt_csd":
+            self.targets = [
+                "{}{}.mif.gz".format(target, x) for x in ["wm", "gm", "csf"]]
+        else:
+            self.targets = [target]
         
         self.actions = [
-            ["dwi2fod", "-force", "msmt_csd", source]
+            ["dwi2fod", "-force", algorithm, source]
                 + (["-mask", mask] if mask else [])
-                + list(itertools.chain(*zip(global_response, self.targets)))
+                + list(itertools.chain(*zip(response, self.targets)))
         ]
 
 def main():
