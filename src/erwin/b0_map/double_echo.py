@@ -2,7 +2,7 @@ import nibabel
 import numpy
 import spire
 
-from .. import entrypoint
+from .. import entrypoint, get_path, load
 from ..cli import *
 
 class DoubleEcho(spire.TaskFactory):
@@ -24,7 +24,7 @@ class DoubleEcho(spire.TaskFactory):
         
         spire.TaskFactory.__init__(self, str(target))
         
-        self.file_dep = [*magnitude, *phase]
+        self.file_dep = [get_path(x) for x in [*magnitude, *phase]]
         self.targets = [target]
         
         self.actions = [
@@ -32,8 +32,8 @@ class DoubleEcho(spire.TaskFactory):
     
     @staticmethod
     def b0_map(magnitude_paths, phase_paths, echo_times, B0_map_path):
-        magnitude = [nibabel.load(x) for x in magnitude_paths]
-        phase = [nibabel.load(x) for x in phase_paths]
+        magnitude = [load(x) for x in magnitude_paths]
+        phase = [load(x) for x in phase_paths]
         
         # Complex signal for the two echoes
         S = [

@@ -8,7 +8,7 @@ import scipy.integrate
 import scipy.optimize
 import spire
 
-from .. import entrypoint
+from .. import entrypoint, get_path, load
 from ..cli import *
 
 import pyximport
@@ -47,7 +47,8 @@ class SinglePoint(spire.TaskFactory):
         self.B1_map = B1_map
         self.T1_map = T1_map
         
-        self.file_dep = [MT_off, MT_on, B0_map, B1_map, T1_map]
+        self.file_dep = [
+            get_path(x) for x in [MT_off, MT_on, B0_map, B1_map, T1_map]]
         self.targets = [MPF_map]
         
         self.actions = [
@@ -68,10 +69,10 @@ class SinglePoint(spire.TaskFactory):
             MPF_map_path):
         
         # Load the images
-        MT_off, MT_on = [nibabel.load(x) for x in [MT_off_path, MT_on_path]]
-        B0_map = nibabel.load(B0_map_path)
-        B1_map = nibabel.load(B1_map_path)
-        T1_map = nibabel.load(T1_map_path)
+        MT_off, MT_on = [load(x) for x in [MT_off_path, MT_on_path]]
+        B0_map = load(B0_map_path)
+        B1_map = load(B1_map_path)
+        T1_map = load(T1_map_path)
         
         # Derived data
         T1 = T1_map.get_fdata()

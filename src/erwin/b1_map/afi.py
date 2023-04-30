@@ -2,7 +2,7 @@ import nibabel
 import numpy
 import spire
 
-from .. import entrypoint
+from .. import entrypoint, get_path, load
 from ..cli import *
 
 class AFI(spire.TaskFactory):
@@ -24,14 +24,14 @@ class AFI(spire.TaskFactory):
         """
         spire.TaskFactory.__init__(self, str(target))
         
-        self.file_dep = sources
+        self.file_dep = [get_path(x) for x in sources]
         self.targets = [target]
         
         self.actions = [(AFI.b1_map, (sources, flip_angle, tr_ratio, target))]
     
     @staticmethod
     def b1_map(sources_path, flip_angle, tr_ratio, target_path):
-        images = [nibabel.load(x) for x in sources_path]
+        images = [load(x) for x in sources_path]
         data = [x.get_fdata() for x in images]
         
         with numpy.errstate(divide="ignore", invalid="ignore"):
@@ -40,7 +40,7 @@ class AFI(spire.TaskFactory):
         actual_fa = numpy.arccos((r*n - 1)/(n-r))
         
         nibabel.save(
-            nibabel.Nifti1Image(actual_fa/flip_angle, image.affine), 
+            nibabel.Nifti1Image(actual_fa/flip_angle, images[0].affine), 
             target_path)
         
 def main():

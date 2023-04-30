@@ -1,6 +1,11 @@
 import argparse
 import logging
+import os
+import re
 import subprocess
+
+import nibabel
+import numpy
 
 def run(tasks):
     """ Run the given Spire tasks in order.
@@ -63,6 +68,57 @@ def entrypoint(class_, aliases=None):
             parser.error(e)
         else:
             raise
+
+def parse_slice(string):
+    match = re.match("^\[(.+)\]$", string)
+    if match:
+        items = re.split(",", match.group(1))
+    else:
+        items = []
+
+    for index, item in enumerate(items):
+        if item == "...":
+            items[index] = Ellipsis
+        else:
+            elements = item.split(":")
+            if not elements:
+                items[index] = None
+            elif len(elements) == 1:
+                items[index] = int(elements[0])
+            else:
+                items[index] = slice(*[
+                    int(x) if x else None for x in item.split(":")])
+
+    return tuple(items)
+
+def load(string):
+    if os.path.isfile(string):
+        return nibabel.load(string)
+    else:
+        # NOTE: may be a pathlib.Path
+        match = re.match(r"^(.+)(\[.+\])$", str(string))
+        if not match:
+            raise FileNotFoundError(f"No such file or no access: '{string}'")
+        path, slice_string = match.groups()
+        if not os.path.isfile(path):
+            raise FileNotFoundError(f"No such file or no access: '{path}'")
+        image = nibabel.load(path)
+        slice_ = parse_slice(slice_string)
+        if not slice_:
+            raise ValueError(f"Invalid slice: '{slice_string}'")
+
+        subset = nibabel.Nifti1Image(
+            numpy.array(image.dataobj)[slice_], image.affine)
+
+        return subset
+
+def get_path(string):
+    # NOTE: may be a pathlib.Path
+    match = re.match(r"^(.+)(\[.+\])$", str(string))
+    if not match:
+        return string
+    else:
+        return match.group(1)
 
 from . import (
     cli, b0_map, b1_map, cbf, diffusion, meta_data, misc, moco, mt_map, qsm,

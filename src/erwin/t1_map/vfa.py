@@ -4,7 +4,7 @@ import spire
 import sycomore
 from sycomore.units import *
 
-from .. import entrypoint
+from .. import entrypoint, get_path, load
 from ..cli import *
 
 class VFA(spire.TaskFactory):
@@ -28,7 +28,7 @@ class VFA(spire.TaskFactory):
         
         spire.TaskFactory.__init__(self, str(target))
         
-        self.file_dep = [*sources, B1_map]
+        self.file_dep = [get_path(x) for x in [*sources, B1_map]]
         self.targets = [target]
         
         self.actions = [
@@ -42,11 +42,11 @@ class VFA(spire.TaskFactory):
         """T1 map generation"""
         
         # Load the VFA signal
-        sources = [nibabel.load(x) for x in source_paths]
+        sources = [load(x) for x in source_paths]
         signal = numpy.asarray([x.get_fdata() for x in sources])
         
         # Compute a flip angle map from the nominal flip angles
-        B1_map = nibabel.load(B1_map_path).get_fdata()
+        B1_map = load(B1_map_path).get_fdata()
         flip_angle_map = numpy.asarray([B1_map * x for x in flip_angles])
         
         # Compute the B1-corrected T1 map

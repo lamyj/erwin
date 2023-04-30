@@ -32,17 +32,21 @@ class Flag(object):
     """
     pass
 
-original_stringify = sphinx.util.typing.stringify
-def stringify(annotation: typing.Any) -> str:
-    if isinstance(annotation, Choice):
-        return "{}[{}]".format(
-            annotation.__class__.__name__,
-            ", ".join(repr(x) for x in annotation.__args__))
-    elif annotation == Flag:
-        return original_stringify(typing.Optional[bool])
-    else:
-        return original_stringify(annotation)
-sphinx.util.typing.stringify = stringify
+try:
+    original_stringify = sphinx.util.typing.stringify
+except AttributeError:
+    pass
+else:
+    def stringify(annotation: typing.Any) -> str:
+        if isinstance(annotation, Choice):
+            return "{}[{}]".format(
+                annotation.__class__.__name__,
+                ", ".join(repr(x) for x in annotation.__args__))
+        elif annotation == Flag:
+            return original_stringify(typing.Optional[bool])
+        else:
+            return original_stringify(annotation)
+    sphinx.util.typing.stringify = stringify
 
 def get_arguments(class_):
     """ Using the class docstring, and the type hints and docstring of the class
