@@ -1,6 +1,5 @@
 import os
 
-import amico
 import spire
 
 from .. import entrypoint
@@ -26,6 +25,8 @@ class NODDIResponses(spire.TaskFactory):
             :param ndirs: Number of directions on the hemisphere
         """
         
+        import amico
+        
         spire.TaskFactory.__init__(self, str(response_directory))
         self.file_dep = [dwi]
         
@@ -44,6 +45,8 @@ class NODDIResponses(spire.TaskFactory):
     def responses(
             dwi, response_directory, 
             shell_width=0, b0_threshold=0, lmax=12, ndirs=32761):
+        
+        import amico
         
         amico.core.setup(lmax, ndirs)
         

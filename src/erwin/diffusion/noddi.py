@@ -1,7 +1,6 @@
 import gzip
 import os
 
-import amico
 import nibabel
 import numpy
 import spire
@@ -40,6 +39,8 @@ class NODDI(spire.TaskFactory):
             :param ndirs: Number of directions on the hemisphere
         """
         
+        import amico
+        
         spire.TaskFactory.__init__(self, str(ic_vf))
         
         model = amico.models.NODDI()
@@ -62,6 +63,8 @@ class NODDI(spire.TaskFactory):
             dwi_path, response_directory, principal_direction_path,
             ic_vf_path, iso_vf_path, od_path,  
             mask_path=None, shell_width=0, b0_threshold=0, lmax=12, ndirs=32761):
+        
+        import amico
         
         amico.core.setup(lmax, ndirs)
         
@@ -127,6 +130,8 @@ class NODDI(spire.TaskFactory):
     
     @staticmethod
     def amico_scheme(dwi_path, shell_width=0, b0_threshold=0):
+        import amico
+        
         if str(dwi_path).endswith(".gz"):
             fd = gzip.GzipFile(dwi_path)
         else:

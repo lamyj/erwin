@@ -13,9 +13,11 @@ If this fails, you may need to
 Using the following methods requires additional dependencies:
 
 - Diffusion tensor and spherical harmonics: `MRtrix`_; conversion from Bruker or Siemens DICOM also requires `Dicomifier`_
+- NODDI: `AMICO`_
 - Motion correction: `ANTs`_
 - QSM: `MEDI`_
 
+.. _AMICO: https://github.com/daducci/AMICO
 .. _ANTs: https://github.com/ANTsX/ANTs
 .. _Cython: https://cython.org/
 .. _Dicomifier: https://dicomifier.readthedocs.io/
