@@ -21,9 +21,9 @@ class SphericalDeconvolutionResponse(spire.TaskFactory):
         """
         
         spire.TaskFactory.__init__(
-            self,
-            os.path.join(target, "wm.response") if algorithm=="dhollander"
-                else str(target))
+            self, str(
+                "{}wm.response".format(target) if algorithm=="dhollander"
+                else target))
         
         self.file_dep = [source]
         if mask is not None:

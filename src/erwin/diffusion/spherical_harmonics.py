@@ -23,9 +23,9 @@ class SphericalHarmonics(spire.TaskFactory):
         """
         
         spire.TaskFactory.__init__(
-            self,
-            os.path.join(target, "wm.mif.gz") if algorithm=="msmt_csd"
-                else str(target))
+            self, str(
+                "{}wm.mif.gz".format(target) if algorithm=="msmt_csd"
+                else target))
         
         if algorithm == "csd":
             response = (response, )
