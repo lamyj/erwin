@@ -1,18 +1,14 @@
 import base64
-import itertools
 import json
-import os
+import pathlib
 import re
-import struct
+import subprocess
 import tempfile
 
 import dicomifier
 import nibabel
 import numpy
 import spire
-
-from .. import entrypoint
-from ..cli import *
 
 class BrukerToMIF(spire.TaskFactory):
     """ Convert DWI data from Bruker to MIF format.
@@ -24,92 +20,56 @@ class BrukerToMIF(spire.TaskFactory):
         """
         
         spire.TaskFactory.__init__(self, str(target))
-    
+        
         meta_data = re.sub(r"\.nii(\.gz)?$", ".json", str(source))
-        
-        target_dir = os.path.dirname(target)
-        target_base = os.path.basename(target)
-        
-        diffusion_scheme_path = os.path.join(
-            target_dir, "__{}.diff".format(target_base))
-        phase_encoding_scheme_path = os.path.join(
-            target_dir, "__{}.pe".format(target_base))
-    
         self.file_dep = [source, meta_data]
         self.targets = [target]
-        self.actions = [
-            (
-                BrukerToMIF.diffusion_scheme, 
-                (meta_data, diffusion_scheme_path)),
-            (
-                BrukerToMIF.phase_encoding_scheme, 
-                (source, meta_data, phase_encoding_scheme_path)),
-            [
-                "mrconvert", "-force",
-                "-grad", diffusion_scheme_path, 
-                "-import_pe_table", phase_encoding_scheme_path,
-                source, target],
-            ["rm", diffusion_scheme_path, phase_encoding_scheme_path]
-        ]
+        self.actions = [(BrukerToMIF.action, (source, meta_data, target))]
     
     @staticmethod
-    def diffusion_scheme(meta_data_path, scheme_path):
-        import dicomifier
-        
+    def action(source_path, meta_data_path, target_path):
         with open(meta_data_path) as fd:
             meta_data = json.load(fd)
         scheme = dicomifier.nifti.diffusion.from_standard(meta_data)
-        with open(scheme_path, "w") as fd:
-            dicomifier.nifti.diffusion.to_mrtrix(scheme, fd)
-    
-    @staticmethod
-    def phase_encoding_scheme(source_path, meta_data_path, scheme_path):
-        with open(meta_data_path) as fd:
-            meta_data = json.load(fd)
         
-        bruker_data = json.loads(
-            base64.b64decode(meta_data["EncapsulatedDocument"][0]).strip(b" \0"))
-        
-        # acqp = dicomifier.bruker.Dataset()
-        # with tempfile.NamedTemporaryFile("w") as fd:
-        #     fd.write(bruker_data["acqp"])
-        #     acqp.load(fd.name)
-        # # NOTE: ACQ_grad_matrix is "independent of the patient orientation"
-        # # (D02_PvParams.pdf, p. D-2-36)
-        # gradients = numpy.reshape(acqp["ACQ_grad_matrix"].value, (-1, 3, 3))
-        # phase_directions = gradients[:,1]
-        
+        bruker = json.loads(
+            base64.b64decode(meta_data["EncapsulatedDocument"][0]).strip(b"\0"))
         method = dicomifier.bruker.Dataset()
-        with tempfile.NamedTemporaryFile("w") as fd:
-            fd.write(bruker_data["method"])
-            method.load(fd.name)
-        # NOTE: is this still valid for multi-shot data?
-        # cf. PVM_EpiNShots
-        total_readout_time = 1e-3*(
-            (method["PVM_EpiNEchoes"].value[0]-1) 
-            * method["PVM_EpiEchoSpacing"].value[0])
+        method.loads(bruker["method"])
+        acqp = dicomifier.bruker.Dataset()
+        acqp.loads(bruker["acqp"])
         
-        phase_gradient = numpy.around(
-            numpy.reshape(method["PVM_SPackArrGradOrient"].value, (3,3))[1])
+        pe_direction = acqp["ACQ_scaling_phase"].value[0]
         
-        entry = numpy.hstack((phase_gradient, [total_readout_time]))
+        epi_factor = meta_data["EchoTrainLength"][0]
+        echo_spacing = 1e-3 * method["PVM_EpiEchoSpacing"].value[0]
+        total_readout_time = epi_factor*echo_spacing
         
-        # WARNING: the phase direction is in the *image* space, each component
-        # is expected to be -1, 0 or +1
-        # https://github.com/MRtrix3/mrtrix3/blob/3.0.2/core/phase_encoding.h#L55-L56
-        # https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/eddy/Faq#How_do_I_know_what_to_put_into_my_--acqp_file
-        scheme = numpy.tile(entry, (nibabel.load(source_path).shape[-1], 1))
+        # NOTE: phase encoding table must be in image space
+        phase_gradient = (
+            numpy.around(
+                numpy.reshape(method["PVM_SPackArrGradOrient"].value, (3,3))[1]
+            ).astype(int))
+        phase_gradient = numpy.abs(phase_gradient)
         
-        # WARNING: Eddy complains when the total readout time is either too 
-        # small or too large. Rescale our values in FSL's range.
-        # https://salsa.debian.org/neurodebian-team/fsl/blob/master/src/eddy/EddyHelperClasses.cpp#L52
-        readout_time = scheme[:, -1]
-        source_range = (readout_time.max()-readout_time.min()) or 1
-        readout_time = (
-            0.01 + (0.2-0.01)/source_range * (readout_time-readout_time.min()))
-        scheme[:, -1] = readout_time
-
-        numpy.savetxt(str(scheme_path), scheme)
+        image = nibabel.load(source_path)
+        phase_encoding = numpy.array(
+            image.shape[3]*[
+                [*(pe_direction*phase_gradient), total_readout_time]])
+        
+        with tempfile.TemporaryDirectory() as dir:
+            dir = pathlib.Path(dir)
+            
+            scheme_path = dir/"grad"
+            with open(scheme_path, "w") as fd:
+                dicomifier.nifti.diffusion.to_mrtrix(scheme, fd)
+            
+            pe_path = dir/"pe"
+            numpy.savetxt(pe_path, phase_encoding, "%g")
+            subprocess.check_call([
+                "mrconvert", "-quiet", "-force", source_path,
+                "-grad", scheme_path, "-import_pe_table", pe_path,
+                target_path])
 
 def main():
     return entrypoint(BrukerToMIF)
