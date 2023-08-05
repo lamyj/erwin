@@ -11,6 +11,7 @@ from .noddi import NODDI
 from .noddi_responses import NODDIResponses
 from .preprocessing import Preprocessing
 from .siemens_to_mif import SiemensToMIF
+from .sift2 import SIFT2
 from .spherical_deconvolution_response import SphericalDeconvolutionResponse
 from .spherical_harmonics import SphericalHarmonics
 from .tensor import Tensor
