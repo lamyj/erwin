@@ -10,7 +10,7 @@ class SIFT2(spire.TaskFactory):
     
     def __init__(
             self, tracks: str, fod: str, weights: str,
-            act: Optional[str], mu: Optional[str]):
+            act: Optional[str]=None, mu: Optional[str]=None):
         """ :param tracks: Path to tracks
             :param fod: Path to spherical harmonics
             :param weights: Target weights file
