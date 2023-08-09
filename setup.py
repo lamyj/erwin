@@ -71,7 +71,7 @@ setuptools.setup(
     
     install_requires=[
         "cython", "docutils", "doit", "meg", "nibabel", "numpy",
-        "pydicom", "scipy", "sphinx", "spire-pipeline>=1.1.1", "sycomore"],
+        "pydicom", "scipy", "sphinx", "spire-pipeline>=1.1.1"],
     
     entry_points={ "console_scripts": [ "erwin=erwin.__main__:main"] },
 )
