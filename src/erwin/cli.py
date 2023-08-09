@@ -32,11 +32,15 @@ class Flag(object):
     """
     pass
 
+original_stringify = None
 try:
-    original_stringify = sphinx.util.typing.stringify
+    original_stringify = sphinx.util.typing.stringify_annotation
 except AttributeError:
-    pass
-else:
+    try:
+        original_stringify = sphinx.util.typing.stringify
+    except AttributeError:
+        pass
+if original_stringify is not None:
     def stringify(annotation: typing.Any) -> str:
         if isinstance(annotation, Choice):
             return "{}[{}]".format(
