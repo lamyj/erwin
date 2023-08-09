@@ -20,7 +20,7 @@ class build(distutils.command.build.build):
 
 setuptools.setup(
     name="erwin",
-    version="1.1.0",
+    version="1.2.0",
     
     description="Toolbox to generate quantitative maps from MRI images",
     long_description=long_description,
