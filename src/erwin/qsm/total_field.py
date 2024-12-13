@@ -1,4 +1,5 @@
 import json
+import os
 import re
 
 import nibabel
@@ -13,13 +14,15 @@ class TotalField(spire.TaskFactory):
     """
     
     def __init__(
-            self, magnitude: str, phase: str, f_total: str, medi_toolbox: str,
-            sd_noise: Optional[str]=None):
+            self, magnitude: str, phase: str, echo_times: Tuple[float, ...],
+            f_total: str, sd_noise: Optional[str]=None,
+            phi_0: Optional[str]=None):
         """ :param magnitude: Path to source magnitude images
             :param phase: Path to source phase images
+            :param echo_times: Echo times (s)
             :param f_total: Path to target total field image
-            :param medi_toolbox: Path to the MEDI toolbox
             :param sd_noise: Path to target map of standard deviation of noise in total susceptibility field
+            :param phi_0: Path to target map of phase extrapolated at t=0
         """
         
         spire.TaskFactory.__init__(self, str(f_total))
@@ -28,18 +31,18 @@ class TotalField(spire.TaskFactory):
         self.targets = [f_total]
         if sd_noise is not None:
             self.targets.append(sd_noise)
+        if phi_0 is not None:
+            self.targets.append(phi_0)
         
-        self.actions = [
-            (
-                TotalField.total_field, (
-                    magnitude, phase, medi_toolbox, f_total, sd_noise))]
+        self.actions = [(
+            __class__.action,
+            (magnitude, phase, echo_times, f_total, sd_noise, phi_0))]
     
-    def total_field(
-            magnitude_path, phase_path, medi_toolbox_path, f_total_path,
-            sd_noise_path):
+    def action(magnitude_path, phase_path, echo_times, f_total_path, sd_noise_path, phi_0_path):
         
         import meg
         
+        medi_toolbox_path = os.environ["ERWIN_MEDI"]
         magnitude_image = nibabel.load(magnitude_path)
         phase_image = nibabel.load(phase_path)
         signal = magnitude_image.get_fdata() * numpy.exp(-1j*phase_image.get_fdata())
@@ -50,15 +53,16 @@ class TotalField(spire.TaskFactory):
             engine["signal"] = signal
             # MEDI toolbox expects shape as a floating point array
             engine["shape"] = numpy.array(signal.shape[:3], float)
+            engine["echo_times"] = echo_times
             
             # Compute the wrapped total field, as γ ΔB ΔTE [rad]
-            engine("[f_total_wrapped, sd_noise] = Fit_ppm_complex(signal);")
+            engine(
+                "[f_total, sd_noise, residuals, phi_0] "
+                    "= Fit_ppm_complex_TE(signal, echo_times);")
             
-            # Unwrap the total field
-            engine("magnitude = sqrt(sum(abs(signal).^2, 4));")
-            engine("f_total = unwrapPhase(magnitude, f_total_wrapped, shape);")
             f_total = engine["f_total"]
             sd_noise = engine["sd_noise"]
+            phi_0 = engine["phi_0"]
         
         nibabel.save(
             nibabel.Nifti1Image(f_total, magnitude_image.affine), f_total_path)
@@ -66,6 +70,10 @@ class TotalField(spire.TaskFactory):
             nibabel.save(
                 nibabel.Nifti1Image(sd_noise, magnitude_image.affine), 
                 sd_noise_path)
+        if phi_0_path is not None:
+            print(phi_0_path)
+            nibabel.save(
+                nibabel.Nifti1Image(phi_0, magnitude_image.affine), phi_0_path)
 
 def main():
-    return entrypoint(TotalField, {"medi_toolbox": "medi"})
+    return entrypoint(TotalField, {"echo_times": "te"})
