@@ -20,7 +20,7 @@ class MediL1(spire.TaskFactory):
             self, magnitude: str, imaging_frequency: float,
             echo_times: Tuple[float, ...], total_field: str, 
             sd_noise: str, object_field: str, brain: str, ventricles: str,
-            target: str, medi_toolbox: str):
+            target: str):
         """ :param magnitude: Path to magnitude image
             :param imaging_frequency: Resonance frequency used by the scanner (Hz)
             :param echo_times: Echo times (s)
@@ -30,7 +30,6 @@ class MediL1(spire.TaskFactory):
             :param brain: Path to binary brain mask
             :param ventricles: Path to binary ventricles mask
             :param target: Path to target susceptibility map
-            :param medi_toolbox: Path to the MEDI toolbox
         """
         spire.TaskFactory.__init__(self, str(target))
         
@@ -40,19 +39,19 @@ class MediL1(spire.TaskFactory):
         
         self.actions = [
             (
-                MediL1.medi, (
+                __class__.action, (
                     magnitude, imaging_frequency, echo_times, total_field,
-                    sd_noise, object_field, brain, ventricles, target,
-                    medi_toolbox))]
+                    sd_noise, object_field, brain, ventricles, target))]
     
     @staticmethod
-    def medi(
+    def action(
             magnitude_path, imaging_frequency, echo_times, total_field_path,
             sd_noise_path, object_field_path, brain_path, ventricles_path,
-            target_path, medi_toolbox_path):
+            target_path):
         
         import meg
         
+        medi_toolbox_path = os.environ["ERWIN_MEDI"]
         magnitude = nibabel.load(magnitude_path)
         total_field = nibabel.load(total_field_path)
         sd_noise = nibabel.load(sd_noise_path)
@@ -102,4 +101,4 @@ class MediL1(spire.TaskFactory):
             nibabel.save(nibabel.Nifti1Image(QSM, magnitude.affine), target_path)
 
 def main():
-    return entrypoint(MediL1, {"echo_times": "te", "medi_toolbox": "medi"})
+    return entrypoint(MediL1, {"echo_times": "te"})

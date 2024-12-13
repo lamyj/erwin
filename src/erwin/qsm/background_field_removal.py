@@ -1,3 +1,5 @@
+import os
+
 import nibabel
 import numpy
 import spire
@@ -12,23 +14,22 @@ class BackgroundFieldRemoval(spire.TaskFactory):
         value problem. Zhou et al. NMR in Biomedicine 27(3). 2014.
     """
     
-    def __init__(self, f_total: str, mask: str, target: str, medi_toolbox: str):
+    def __init__(self, f_total: str, mask: str, target: str):
         """ :param f_total: Path to total field map
             :param mask: Path to binary mask image
             :param target: Path to target object field image
-            :param medi_toolbox: Path to the MEDI toolbox
         """
         spire.TaskFactory.__init__(self, str(target))
         
         self.file_dep = [f_total, mask]
         self.targets = [target]
         
-        self.actions = [
-            (BackgroundFieldRemoval.lbv, (f_total, mask, medi_toolbox, target))]
+        self.actions = [(__class__.action, (f_total, mask, target))]
     
-    def lbv(f_total_path, mask_path, medi_toolbox_path, target_path):
+    def action(f_total_path, mask_path, target_path):
         import meg
         
+        medi_toolbox_path = os.environ["ERWIN_MEDI"]
         f_total_image = nibabel.load(f_total_path)
         mask_image = nibabel.load(mask_path)
         
@@ -47,4 +48,4 @@ class BackgroundFieldRemoval(spire.TaskFactory):
             nibabel.Nifti1Image(f_object, f_total_image.affine), target_path)
 
 def main():
-    return entrypoint(BackgroundFieldRemoval, {"medi_toolbox": "medi"})
+    return entrypoint(BackgroundFieldRemoval)

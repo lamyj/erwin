@@ -1,4 +1,7 @@
+import os
+
 import nibabel
+import numpy
 import spire
 
 from .. import entrypoint
@@ -14,24 +17,23 @@ class R2Star(spire.TaskFactory):
     
     def __init__(
             self, source: str, echo_times: Tuple[float, ...], target: str,
-            medi_toolbox: str):
+            mask: Optional[str]=None):
         """ :param source: Path to source magnitude image
             :param echo_times: Echo times (s)
             :param target: Path to R2* map (Hz)
-            :param medi_toolbox: Path to the MEDI toolbox
+            :param mask: Path to binary mask
         """
         spire.TaskFactory.__init__(self, str(target))
         
-        self.file_dep = [source]
+        self.file_dep = [source, *([mask] if mask else [])]
         self.targets = [target]
-        
-        self.actions = [
-            (R2Star.arlo, (source, echo_times, medi_toolbox, target))]
+        self.actions = [(__class__.action, (source, echo_times, target, mask))]
     
     @staticmethod
-    def arlo(source_path, echo_times, medi_toolbox_path, target_path):
+    def action(source_path, echo_times, target_path, mask):
         import meg
         
+        medi_toolbox_path = os.environ["ERWIN_MEDI"]
         source = nibabel.load(source_path)
         
         with meg.Engine() as engine:
@@ -41,7 +43,11 @@ class R2Star(spire.TaskFactory):
             engine("R2_star = arlo(echo_times, magnitude);")
             R2_star = engine["R2_star"]
         
+        if mask:
+            mask = numpy.array(nibabel.load(mask).dataobj)
+            R2_star[mask == 0] = 0
+        
         nibabel.save(nibabel.Nifti1Image(R2_star, source.affine), target_path)
 
 def main():
-    return entrypoint(R2Star, {"echo_times": "te", "medi_toolbox": "medi"})
+    return entrypoint(R2Star, {"echo_times": "te"})
