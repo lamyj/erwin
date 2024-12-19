@@ -26,7 +26,7 @@ class Tensor(spire.TaskFactory):
         self.file_dep = [source]
         if mask is not None:
             self.file_dep.append(mask)
-        self.targets = [target]
+        self.targets = [target, *([b0] if b0 else [])]
         self.actions = [
             ["dwi2tensor", "-force"] 
                 + (["-mask", mask] if mask else [])
